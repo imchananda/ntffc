@@ -145,7 +145,7 @@ function generateSeatMap() {
   addRect(11, 45, 22, 3, 'REGULAR', 'D1');
   addRect(11, 49, 22, 3, 'REGULAR', 'D2');
   addRect(11, 53, 22, 3, 'REGULAR', 'D3');
-  addRect(11, 57, 22, 3, 'REGULAR', 'D4');
+  addRect(11, 57, 22, 2, 'REGULAR', 'D4');
   addRect(65, 45, 22, 3, 'REGULAR', 'E1');
   addRect(65, 49, 22, 3, 'REGULAR', 'E2');
   addRect(65, 53, 22, 3, 'REGULAR', 'E3');
