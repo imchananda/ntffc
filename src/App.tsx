@@ -1799,7 +1799,6 @@ function AdminDashboardView({
               type="password"
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
-              placeholder="••••••••"
               className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-center tracking-widest text-amber-450 focus:outline-none focus:border-amber-500 transition-colors"
               required
             />
