@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Noto Sans Thai", sans-serif;
+}
+
+/* Base Reset & Cozy Fandom Concert Background */
+body {
+  background-color: #04060d; 
+  background-image: 
+    radial-gradient(circle at 50% -10%, rgba(59, 130, 246, 0.18) 0%, transparent 60%),
+    radial-gradient(circle at 80% 30%, rgba(139, 92, 246, 0.12) 0%, transparent 50%);
+  color: #f8fafc; /* Tailwind Slate-50 */
+  font-family: 'Inter', 'Noto Sans Thai', sans-serif;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+@keyframes float1 {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+  33% { transform: translate(5%, -10%) scale(1.2); opacity: 0.9; }
+  66% { transform: translate(-5%, 5%) scale(0.9); opacity: 0.5; }
+  100% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+}
+
+@keyframes float2 {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+  33% { transform: translate(-5%, 10%) scale(1.15); opacity: 0.8; }
+  66% { transform: translate(5%, -5%) scale(0.85); opacity: 0.4; }
+  100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+}
+
+.animate-float-1 {
+  animation: float1 12s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: float2 15s ease-in-out infinite alternate;
+}
+
+/* Centered root wrapper */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Elegant Slate Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #04060d;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155; /* Slate-700 */
+  border-radius: 9999px;
+  border: 2px solid #04060d;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6; /* Soft blue focus */
+}
+
+/* Premium Minimalist Slate Cards */
+.slate-card {
+  background-color: rgba(30, 41, 59, 0.65); /* Slate-800 glass overlay */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+}
+
+.slate-card-hover {
+  transition: all 0.2s ease-in-out;
+}
+.slate-card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* Beautiful form fields */
+.form-input {
+  background-color: #090d19;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  transition: all 0.15s ease-in-out;
+}
+.form-input:focus {
+  border-color: #3b82f6;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* 3D Perspective Card Container */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+/* Shimmer overlay for E-tickets */
+.holo-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.holo-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(125deg, transparent 35%, rgba(255, 255, 255, 0.04) 45%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.04) 55%, transparent 65%);
+  background-size: 250% 250%;
+  animation: holo-wave 7s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes holo-wave {
+  0% { background-position: 200% 200%; }
+  100% { background-position: -200% -200%; }
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
