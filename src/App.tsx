@@ -67,6 +67,14 @@ interface StatsData {
     email: string;
     comments: string;
   }>;
+  planCounts?: Record<string, number>;
+  undecidedResponses?: Array<{
+    timestamp: string;
+    name: string;
+    email: string;
+    origin: string;
+    comments: string;
+  }>;
 }
 
 // Seat Grid Constants
@@ -258,7 +266,9 @@ function App() {
     attendingDays: { "Day 1": 0, "Day 2": 0, "Both Days": 0, "Undecided": 0 },
     priceD1Demands: {},
     priceD2Demands: {},
-    recentFeedbacks: []
+    recentFeedbacks: [],
+    planCounts: { "Definitely": 0, "Probably": 0, "Not sure yet": 0 },
+    undecidedResponses: []
   });
 
   const [lastTicket, setLastTicket] = useState<{
@@ -313,10 +323,23 @@ function App() {
         const priceD1Demands: Record<string, number> = {};
         const priceD2Demands: Record<string, number> = {};
         const feedbacks: Array<{ timestamp: string; name: string; email: string; comments: string }> = [];
+        const planCounts = { "Definitely": 0, "Probably": 0, "Not sure yet": 0 };
+        const undecidedResponses: Array<{ timestamp: string; name: string; email: string; origin: string; comments: string }> = [];
 
         localResponses.forEach(r => {
           if (r.attending === "Definitely" || r.attending === "Probably") {
             totalAttending++;
+            if (r.attending === "Definitely") planCounts["Definitely"]++;
+            if (r.attending === "Probably") planCounts["Probably"]++;
+          } else {
+            planCounts["Not sure yet"]++;
+            undecidedResponses.push({
+              timestamp: r.timestamp,
+              email: r.email,
+              name: r.name,
+              origin: r.origin,
+              comments: r.comments || ""
+            });
           }
           if (r.seatDay1 && r.seatDay1.startsWith("Waitlist")) {
             waitlistCountD1++;
@@ -326,7 +349,13 @@ function App() {
           }
           if (r.origin) origins[r.origin] = (origins[r.origin] || 0) + 1;
           if (r.dayPreference) {
-            attendingDays[r.dayPreference as keyof typeof attendingDays] = (attendingDays[r.dayPreference as keyof typeof attendingDays] || 0) + 1;
+            let mapped = "Undecided";
+            if (r.dayPreference.indexOf("2") !== -1 || r.dayPreference.indexOf("Both") !== -1) {
+              mapped = "Both Days";
+            } else if (r.dayPreference.indexOf("1") !== -1 || r.dayPreference.indexOf("Day 1") !== -1) {
+              mapped = "Day 1";
+            }
+            attendingDays[mapped as keyof typeof attendingDays] = (attendingDays[mapped as keyof typeof attendingDays] || 0) + 1;
           }
           if (r.priceDay1) priceD1Demands[r.priceDay1] = (priceD1Demands[r.priceDay1] || 0) + 1;
           if (r.priceDay2) priceD2Demands[r.priceDay2] = (priceD2Demands[r.priceDay2] || 0) + 1;
@@ -339,6 +368,7 @@ function App() {
         });
 
         feedbacks.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        undecidedResponses.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
         setStats({
           capacity: CAPACITY,
@@ -354,7 +384,9 @@ function App() {
           attendingDays,
           priceD1Demands,
           priceD2Demands,
-          recentFeedbacks: feedbacks.slice(0, 50)
+          recentFeedbacks: feedbacks.slice(0, 50),
+          planCounts,
+          undecidedResponses
         });
         setIsRefreshing(false);
       }, 250);
@@ -382,7 +414,9 @@ function App() {
             attendingDays: json.stats.attendingDays || { "Day 1": 0, "Day 2": 0, "Both Days": 0, "Undecided": 0 },
             priceD1Demands: json.stats.priceD1Demands || {},
             priceD2Demands: json.stats.priceD2Demands || {},
-            recentFeedbacks: json.stats.recentFeedbacks || []
+            recentFeedbacks: json.stats.recentFeedbacks || [],
+            planCounts: json.stats.planCounts || { "Definitely": 0, "Probably": 0, "Not sure yet": 0 },
+            undecidedResponses: json.stats.undecidedResponses || []
           });
         } else {
           setServerError("เกิดข้อผิดพลาดในการโหลดข้อมูลสถิติ");
@@ -425,7 +459,7 @@ function App() {
     // Generate exactly 2531 responses
     for (let i = 1; i <= 2531; i++) {
       const isAttending = i <= 1248;
-      const attending = isAttending ? "Definitely" : "No";
+      const attending = isAttending ? "Definitely" : "Not sure yet";
       
       let dayPreference = "Undecided";
       let seatDay1 = "";
@@ -435,20 +469,15 @@ function App() {
 
       if (isAttending) {
         if (i <= 841) {
-          dayPreference = "Both Days";
+          dayPreference = "2 Days";
           seatDay1 = tempBookedD1[i - 1] || "";
           seatDay2 = tempBookedD2[i - 1] || "";
           priceDay1 = mockPrices[i % mockPrices.length];
           priceDay2 = mockPrices[(i + 1) % mockPrices.length];
-        } else if (i <= 1102) {
-          dayPreference = "Day 1";
+        } else {
+          dayPreference = "1 Day";
           seatDay1 = tempBookedD1[i - 1] || "";
           priceDay1 = mockPrices[i % mockPrices.length];
-        } else {
-          dayPreference = "Day 2";
-          const d2Idx = 841 + (i - 1102 - 1);
-          seatDay2 = tempBookedD2[d2Idx] || "";
-          priceDay2 = mockPrices[i % mockPrices.length];
         }
       }
 
@@ -1050,7 +1079,7 @@ function SurveyFormView({
   const [name, setName] = useState("");
   const [attending, setAttending] = useState("Definitely");
   const [origin, setOrigin] = useState("Bangkok");
-  const [dayPreference, setDayPreference] = useState("Day 1");
+  const [dayPreference, setDayPreference] = useState("1 Day");
   const [priceDay1, setPriceDay1] = useState("Waiting for benefits");
   const [priceDay2, setPriceDay2] = useState("Waiting for benefits");
   const [comments, setComments] = useState("");
@@ -1072,6 +1101,15 @@ function SurveyFormView({
       setErrorMsg("โปรดใช้อีเมลมาตรฐานที่มีอยู่จริงเพื่อประเมินรายงานสรุป");
       return false;
     }
+    
+    // Check local duplicate in mock mode
+    if (apiMode === "mock") {
+      const localResponses = JSON.parse(localStorage.getItem(LSTORAGE_KEY_RESPONSES) || "[]") as ResponseData[];
+      if (localResponses.some(r => r.email.toLowerCase() === email.toLowerCase().trim())) {
+        setErrorMsg("อีเมลนี้ได้เคยส่งแบบสำรวจไปแล้ว ไม่สามารถตอบซ้ำได้");
+        return false;
+      }
+    }
     return true;
   };
 
@@ -1086,8 +1124,8 @@ function SurveyFormView({
       attending,
       origin,
       dayPreference: (attending === "Definitely" || attending === "Probably") ? dayPreference : "Undecided",
-      priceDay1: (dayPreference === "Day 1" || dayPreference === "Both Days") ? priceDay1 : "",
-      priceDay2: (dayPreference === "Day 2" || dayPreference === "Both Days") ? priceDay2 : "",
+      priceDay1: (attending === "Definitely" || attending === "Probably") && (dayPreference === "1 Day" || dayPreference === "2 Days") ? priceDay1 : "",
+      priceDay2: (attending === "Definitely" || attending === "Probably") && (dayPreference === "2 Days") ? priceDay2 : "",
       comments
     };
 
@@ -1098,7 +1136,7 @@ function SurveyFormView({
         const localBookedD2 = JSON.parse(localStorage.getItem(LSTORAGE_KEY_BOOKED_D2) || "[]") as string[];
 
         if (localResponses.some(r => r.email.toLowerCase() === email.toLowerCase().trim())) {
-          setErrorMsg("อีเมลนี้ได้เคยจองที่นั่งส่งแบบสำรวจไปแล้ว ไม่สามารถตอบซ้ำได้");
+          setErrorMsg("อีเมลนี้ได้เคยส่งแบบสำรวจไปแล้ว ไม่สามารถตอบซ้ำได้");
           setLoading(false);
           return;
         }
@@ -1126,7 +1164,7 @@ function SurveyFormView({
         };
 
         if (attending === "Definitely" || attending === "Probably") {
-          if (dayPreference === "Day 1" || dayPreference === "Both Days") {
+          if (dayPreference === "1 Day" || dayPreference === "1 วัน") {
             seatDay1 = getNextSeat(localBookedD1);
             if (!seatDay1) {
               const wlNum = getWaitlistNum(localResponses, "seatDay1");
@@ -1134,8 +1172,15 @@ function SurveyFormView({
             } else {
               localBookedD1.push(seatDay1);
             }
-          }
-          if (dayPreference === "Day 2" || dayPreference === "Both Days") {
+          } else if (dayPreference === "2 Days" || dayPreference === "2 วัน กรณีเพิ่มรอบ") {
+            seatDay1 = getNextSeat(localBookedD1);
+            if (!seatDay1) {
+              const wlNum = getWaitlistNum(localResponses, "seatDay1");
+              seatDay1 = `Waitlist-D1-${String(wlNum).padStart(4, '0')}`;
+            } else {
+              localBookedD1.push(seatDay1);
+            }
+
             seatDay2 = getNextSeat(localBookedD2);
             if (!seatDay2) {
               const wlNum = getWaitlistNum(localResponses, "seatDay2");
@@ -1190,10 +1235,8 @@ function SurveyFormView({
         };
 
         const dayMapping: Record<string, string> = {
-          "Day 1": "วันแรก / Day 1",
-          "Day 2": "วันที่สอง / Day 2",
-          "Both Days": "ทั้งสองวัน / Both Days",
-          "Undecided": "ยังไม่ตัดสินใจ / Undecided"
+          "1 Day": "1 วัน / 1 Day",
+          "2 Days": "2 วัน กรณีเพิ่มรอบ / 2 Days"
         };
 
         const livePayload = {
@@ -1209,8 +1252,8 @@ function SurveyFormView({
                 : origin === "Southern" ? "ภาคใต้ / Southern Thailand"
                 : origin,
           attendDays: (attending === "Definitely" || attending === "Probably") ? (dayMapping[dayPreference] || dayPreference) : "Undecided",
-          priceD1: (dayPreference === "Day 1" || dayPreference === "Both Days") ? priceDay1 : "",
-          priceD2: (dayPreference === "Day 2" || dayPreference === "Both Days") ? priceDay2 : "",
+          priceD1: (attending === "Definitely" || attending === "Probably") && (dayPreference === "1 Day" || dayPreference === "2 Days") ? priceDay1 : "",
+          priceD2: (attending === "Definitely" || attending === "Probably") && (dayPreference === "2 Days") ? priceDay2 : "",
           comments
         };
 
@@ -1330,7 +1373,6 @@ function SurveyFormView({
                     <option value="Definitely">{t('opt_attending_definitely')}</option>
                     <option value="Probably">{t('opt_attending_probably')}</option>
                     <option value="Not sure yet">{t('opt_attending_not_sure')}</option>
-                    <option value="No">{t('opt_attending_no')}</option>
                   </select>
                   <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
@@ -1398,17 +1440,15 @@ function SurveyFormView({
                       onChange={(e) => setDayPreference(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 hover:border-blue-500/50 focus:border-blue-500 rounded-2xl px-5 py-3.5 text-sm text-slate-100 focus:outline-none transition-colors appearance-none cursor-pointer shadow-inner"
                     >
-                      <option value="Day 1">{t('opt_day_1')}</option>
-                      <option value="Day 2">{t('opt_day_2')}</option>
-                      <option value="Both Days">{t('opt_day_both')}</option>
-                      <option value="Undecided">{t('opt_day_undecided')}</option>
+                      <option value="1 Day">{t('opt_day_1')}</option>
+                      <option value="2 Days">{t('opt_day_both')}</option>
                     </select>
                     <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
-                  {(dayPreference === "Day 1" || dayPreference === "Both Days") && (
+                  {(dayPreference === "1 Day" || dayPreference === "2 Days") && (
                     <div>
                       <label className="block text-[11px] text-blue-400 font-bold uppercase tracking-wider mb-1.5">
                         {t('survey_q6')}
@@ -1430,7 +1470,7 @@ function SurveyFormView({
                     </div>
                   )}
 
-                  {(dayPreference === "Day 2" || dayPreference === "Both Days") && (
+                  {(dayPreference === "2 Days") && (
                     <div>
                       <label className="block text-[11px] text-amber-500 font-bold uppercase tracking-wider mb-1.5">
                         {t('survey_q7')}
@@ -1732,6 +1772,7 @@ function AdminDashboardView({
   showPublicStats: boolean;
   setShowPublicStats: (val: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("overview");
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
     return localStorage.getItem("ntf_admin_auth") === "true";
@@ -1776,18 +1817,21 @@ function AdminDashboardView({
   }, [stats.origins]);
 
   const planChartData = useMemo(() => {
-    // Derived from totalAttending and totalResponses (approximate since we don't store exact breakdowns of plan choices in stats right now except for attending)
-    // To match the realistic horizontal bar chart:
+    if (stats.planCounts) {
+      return [
+        { name: t('opt_attending_definitely'), value: stats.planCounts["Definitely"] || 0 },
+        { name: t('opt_attending_probably'), value: stats.planCounts["Probably"] || 0 },
+        { name: t('opt_attending_not_sure'), value: stats.planCounts["Not sure yet"] || 0 }
+      ];
+    }
     const attending = stats.totalAttending;
     const notAttending = Math.max(0, stats.totalResponses - attending);
-    // Rough estimate breakdown
     return [
-      { name: "ไปแน่นอน", value: Math.floor(attending * 0.6) },
-      { name: "มีโอกาสไป", value: Math.ceil(attending * 0.4) },
-      { name: "ยังไม่แน่ใจ", value: Math.floor(notAttending * 0.8) },
-      { name: "ไม่ไป", value: Math.ceil(notAttending * 0.2) }
+      { name: t('opt_attending_definitely'), value: Math.floor(attending * 0.6) },
+      { name: t('opt_attending_probably'), value: Math.ceil(attending * 0.4) },
+      { name: t('opt_attending_not_sure'), value: notAttending }
     ];
-  }, [stats.totalAttending, stats.totalResponses]);
+  }, [stats.planCounts, stats.totalAttending, stats.totalResponses, t]);
 
   const priceD1ChartData = useMemo(() => {
     const keys = ["6,000-7,000 THB", "4,500-5,500 THB", "3,000-4,000 THB", "1,500-2,500 THB", "Waiting for benefits"];
@@ -1821,12 +1865,10 @@ function AdminDashboardView({
 
   const attendingDaysChartData = useMemo(() => {
     return [
-      { name: "วันแรก / Day 1", value: stats.attendingDays["Day 1"] || 0 },
-      { name: "วันที่สอง / Day 2", value: stats.attendingDays["Day 2"] || 0 },
-      { name: "ทั้งสองวัน / Both Days", value: stats.attendingDays["Both Days"] || 0 },
-      { name: "ยังไม่ตัดสินใจ / Undecided", value: stats.attendingDays["Undecided"] || 0 }
-    ].filter(d => d.value > 0).sort((a, b) => b.value - a.value);
-  }, [stats.attendingDays]);
+      { name: t('opt_day_1'), value: stats.attendingDays["Day 1"] || 0 },
+      { name: t('opt_day_both'), value: stats.attendingDays["Both Days"] || 0 }
+    ].filter(d => d.value > 0);
+  }, [stats.attendingDays, t]);
 
   const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#64748b', '#334155'];
 
@@ -1887,6 +1929,7 @@ function AdminDashboardView({
           
           <div className="pt-5 pb-2 px-3 text-[9px] font-bold uppercase tracking-wider text-slate-600">ข้อมูลการตอบแบบสำรวจ</div>
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('responses'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'responses' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ผู้ตอบแบบสำรวจ</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('undecided'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'undecided' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ผู้ที่ยังไม่แน่ใจ</a>
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('demographics'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'demographics' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MapPin className="w-4 h-4" /> แหล่งที่มาของผู้เข้าร่วม</a>
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('prices'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'prices' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><TrendingUp className="w-4 h-4" /> ความสนใจบัตร</a>
           
@@ -2222,65 +2265,109 @@ function AdminDashboardView({
 
       {/* DETAILED DATA TABLE */}
       {(activeTab === 'overview' || activeTab === 'responses' || activeTab === 'feedbacks') && (
-      <div id="feedbacks" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 space-y-6 shadow-lg scroll-mt-20">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1e293b] pb-4">
-          <h3 className="text-[13px] font-bold text-white tracking-wide">
-            ผู้ตอบแบบสำรวจล่าสุด ({filteredFeedbacks.length} รายการ)
-          </h3>
-          
-          <div className="relative w-full sm:max-w-xs">
-            <input
-              type="text"
-              value={feedbackSearch}
-              onChange={(e) => setFeedbackSearch(e.target.value)}
-              placeholder="ค้นหาข้อความ ชื่อ หรืออีเมล..."
-              className="bg-[#020617] border border-[#1e293b] rounded-lg px-8 py-2 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all placeholder:text-slate-600"
-            />
-            <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-500" />
+        <div id="feedbacks" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 space-y-6 shadow-lg scroll-mt-20">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1e293b] pb-4">
+            <h3 className="text-[13px] font-bold text-white tracking-wide">
+              ผู้ตอบแบบสำรวจล่าสุด ({filteredFeedbacks.length} รายการ)
+            </h3>
+            
+            <div className="relative w-full sm:max-w-xs">
+              <input
+                type="text"
+                value={feedbackSearch}
+                onChange={(e) => setFeedbackSearch(e.target.value)}
+                placeholder="ค้นหาข้อความ ชื่อ หรืออีเมล..."
+                className="bg-[#020617] border border-[#1e293b] rounded-lg px-8 py-2 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all placeholder:text-slate-600"
+              />
+              <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-500" />
+            </div>
           </div>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs whitespace-nowrap">
-            <thead>
-              <tr className="border-b border-[#1e293b] text-slate-400 font-bold tracking-wider">
-                <th className="py-3 px-4 font-semibold">ลำดับ</th>
-                <th className="py-3 px-4 font-semibold">อีเมล</th>
-                <th className="py-3 px-4 font-semibold">ชื่อที่ใช้ในแฟนด้อม</th>
-                <th className="py-3 px-4 font-semibold">วันเวลาที่ตอบ</th>
-                <th className="py-3 px-4 font-semibold w-full">ข้อเสนอแนะเพิ่มเติม</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#1e293b]/50">
-              {filteredFeedbacks.length > 0 ? (
-                filteredFeedbacks.map((f, i) => (
-                  <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="py-3.5 px-4 text-slate-500">{i + 1}</td>
-                    <td className="py-3.5 px-4 text-slate-300 font-mono text-[11px] group-hover:text-blue-400 transition-colors">{f.email}</td>
-                    <td className="py-3.5 px-4 font-bold text-slate-200">{f.name}</td>
-                    <td className="py-3.5 px-4 text-slate-400 text-[10px]">{new Date(f.timestamp).toLocaleString("th-TH")}</td>
-                    <td className="py-3.5 px-4 text-slate-400 max-w-[200px] sm:max-w-md overflow-hidden text-ellipsis leading-relaxed font-sans">{f.comments || "-"}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
-                    ไม่มีข้อมูลแสดงผลในขณะนี้
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs whitespace-nowrap">
+              <thead>
+                <tr className="border-b border-[#1e293b] text-slate-400 font-bold tracking-wider">
+                  <th className="py-3 px-4 font-semibold">ลำดับ</th>
+                  <th className="py-3 px-4 font-semibold">อีเมล</th>
+                  <th className="py-3 px-4 font-semibold">ชื่อที่ใช้ในแฟนด้อม</th>
+                  <th className="py-3 px-4 font-semibold">วันเวลาที่ตอบ</th>
+                  <th className="py-3 px-4 font-semibold w-full">ข้อเสนอแนะเพิ่มเติม</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {filteredFeedbacks.length > 0 && (
-          <div className="pt-4 flex justify-end">
-            <button className="px-4 py-2 border border-[#1e293b] rounded-lg text-xs font-bold text-slate-400 hover:text-white hover:bg-[#1e293b] transition-all">
-              ดูทั้งหมด
-            </button>
+              </thead>
+              <tbody className="divide-y divide-[#1e293b]/50">
+                {filteredFeedbacks.length > 0 ? (
+                  filteredFeedbacks.map((f, i) => (
+                    <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
+                      <td className="py-3.5 px-4 text-slate-500">{i + 1}</td>
+                      <td className="py-3.5 px-4 text-slate-300 font-mono text-[11px] group-hover:text-blue-400 transition-colors">{f.email}</td>
+                      <td className="py-3.5 px-4 font-bold text-slate-200">{f.name}</td>
+                      <td className="py-3.5 px-4 text-slate-400 text-[10px]">{new Date(f.timestamp).toLocaleString("th-TH")}</td>
+                      <td className="py-3.5 px-4 text-slate-400 max-w-[200px] sm:max-w-md overflow-hidden text-ellipsis leading-relaxed font-sans">{f.comments || "-"}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                      ไม่มีข้อมูลแสดงผลในขณะนี้
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
+          
+          {filteredFeedbacks.length > 0 && (
+            <div className="pt-4 flex justify-end">
+              <button className="px-4 py-2 border border-[#1e293b] rounded-lg text-xs font-bold text-slate-400 hover:text-white hover:bg-[#1e293b] transition-all">
+                ดูทั้งหมด
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* UNDECIDED DATA TABLE */}
+      {activeTab === 'undecided' && (
+        <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 space-y-6 shadow-lg">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1e293b] pb-4">
+            <h3 className="text-[13px] font-bold text-white tracking-wide">
+              รายชื่อผู้ยังไม่แน่ใจ ({stats.undecidedResponses?.length || 0} รายการ)
+            </h3>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs whitespace-nowrap">
+              <thead>
+                <tr className="border-b border-[#1e293b] text-slate-400 font-bold tracking-wider">
+                  <th className="py-3 px-4 font-semibold">ลำดับ</th>
+                  <th className="py-3 px-4 font-semibold">อีเมล</th>
+                  <th className="py-3 px-4 font-semibold">ชื่อที่ใช้ในแฟนด้อม</th>
+                  <th className="py-3 px-4 font-semibold">วันเวลาที่ตอบ</th>
+                  <th className="py-3 px-4 font-semibold w-full">ข้อเสนอแนะเพิ่มเติม</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1e293b]/50">
+                {stats.undecidedResponses && stats.undecidedResponses.length > 0 ? (
+                  stats.undecidedResponses.map((f, i) => (
+                    <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
+                      <td className="py-3.5 px-4 text-slate-500">{i + 1}</td>
+                      <td className="py-3.5 px-4 text-slate-300 font-mono text-[11px] group-hover:text-blue-400 transition-colors">{f.email}</td>
+                      <td className="py-3.5 px-4 font-bold text-slate-200">{f.name}</td>
+                      <td className="py-3.5 px-4 text-slate-400 text-[10px]">{new Date(f.timestamp).toLocaleString("th-TH")}</td>
+                      <td className="py-3.5 px-4 text-slate-400 max-w-[200px] sm:max-w-md overflow-hidden text-ellipsis leading-relaxed font-sans">{f.comments || "-"}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                      ไม่มีข้อมูลแสดงผลในขณะนี้
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {/* SEATING MAP DAY 1 */}
