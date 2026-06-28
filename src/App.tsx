@@ -1123,9 +1123,9 @@ function SurveyFormView({
       name,
       attending,
       origin,
-      dayPreference: (attending === "Definitely" || attending === "Probably") ? dayPreference : "Undecided",
-      priceDay1: (attending === "Definitely" || attending === "Probably") && (dayPreference === "1 Day" || dayPreference === "2 Days") ? priceDay1 : "",
-      priceDay2: (attending === "Definitely" || attending === "Probably") && (dayPreference === "2 Days") ? priceDay2 : "",
+      dayPreference: dayPreference,
+      priceDay1: (dayPreference === "1 Day" || dayPreference === "2 Days") ? priceDay1 : "",
+      priceDay2: (dayPreference === "2 Days") ? priceDay2 : "",
       comments
     };
 
@@ -1189,6 +1189,17 @@ function SurveyFormView({
               localBookedD2.push(seatDay2);
             }
           }
+        } else if (attending === "Not sure yet") {
+          // คนที่ยังไม่แน่ใจจะได้รับคิวสำรองโดยตรง ไม่ได้รับสิทธิ์จองผังที่นั่งจำลอง
+          if (dayPreference === "1 Day" || dayPreference === "1 วัน") {
+            const wlNum = getWaitlistNum(localResponses, "seatDay1");
+            seatDay1 = `Waitlist-D1-${String(wlNum).padStart(4, '0')}`;
+          } else if (dayPreference === "2 Days" || dayPreference === "2 วัน กรณีเพิ่มรอบ") {
+            const wlNumD1 = getWaitlistNum(localResponses, "seatDay1");
+            seatDay1 = `Waitlist-D1-${String(wlNumD1).padStart(4, '0')}`;
+            const wlNumD2 = getWaitlistNum(localResponses, "seatDay2");
+            seatDay2 = `Waitlist-D2-${String(wlNumD2).padStart(4, '0')}`;
+          }
         }
 
         localResponses.push({
@@ -1251,9 +1262,9 @@ function SurveyFormView({
                 : origin === "Northeastern" ? "ภาคตะวันออกเฉียงเหนือ / Northeastern Thailand"
                 : origin === "Southern" ? "ภาคใต้ / Southern Thailand"
                 : origin,
-          attendDays: (attending === "Definitely" || attending === "Probably") ? (dayMapping[dayPreference] || dayPreference) : "Undecided",
-          priceD1: (attending === "Definitely" || attending === "Probably") && (dayPreference === "1 Day" || dayPreference === "2 Days") ? priceDay1 : "",
-          priceD2: (attending === "Definitely" || attending === "Probably") && (dayPreference === "2 Days") ? priceDay2 : "",
+          attendDays: dayMapping[dayPreference] || dayPreference,
+          priceD1: (dayPreference === "1 Day" || dayPreference === "2 Days") ? priceDay1 : "",
+          priceD2: (dayPreference === "2 Days") ? priceDay2 : "",
           comments
         };
 
@@ -1428,76 +1439,68 @@ function SurveyFormView({
         {/* STEP 2 */}
         {step === 2 && (
           <div className="space-y-4">
-            {(attending === "Definitely" || attending === "Probably") ? (
-              <>
+            <div>
+              <label className="block text-[11px] text-slate-300 font-bold uppercase tracking-wider mb-1.5">
+                {t('survey_q5')}
+              </label>
+              <div className="relative">
+                <select
+                  value={dayPreference}
+                  onChange={(e) => setDayPreference(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 hover:border-blue-500/50 focus:border-blue-500 rounded-2xl px-5 py-3.5 text-sm text-slate-100 focus:outline-none transition-colors appearance-none cursor-pointer shadow-inner"
+                >
+                  <option value="1 Day">{t('opt_day_1')}</option>
+                  <option value="2 Days">{t('opt_day_both')}</option>
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              {(dayPreference === "1 Day" || dayPreference === "2 Days") && (
                 <div>
-                  <label className="block text-[11px] text-slate-300 font-bold uppercase tracking-wider mb-1.5">
-                    {t('survey_q5')}
+                  <label className="block text-[11px] text-blue-400 font-bold uppercase tracking-wider mb-1.5">
+                    {t('survey_q6')}
                   </label>
                   <div className="relative">
                     <select
-                      value={dayPreference}
-                      onChange={(e) => setDayPreference(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 hover:border-blue-500/50 focus:border-blue-500 rounded-2xl px-5 py-3.5 text-sm text-slate-100 focus:outline-none transition-colors appearance-none cursor-pointer shadow-inner"
+                      value={priceDay1}
+                      onChange={(e) => setPriceDay1(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 hover:border-blue-500/50 focus:border-blue-500 rounded-2xl px-5 py-3.5 text-sm text-blue-400 focus:outline-none transition-colors appearance-none cursor-pointer shadow-inner"
                     >
-                      <option value="1 Day">{t('opt_day_1')}</option>
-                      <option value="2 Days">{t('opt_day_both')}</option>
+                      <option value="6,000-7,000 THB">{t('opt_price_vip')}</option>
+                      <option value="4,500-5,500 THB">{t('opt_price_premium')}</option>
+                      <option value="3,000-4,000 THB">{t('opt_price_regular')}</option>
+                      <option value="1,500-2,500 THB">{t('opt_price_economy')}</option>
+                      <option value="Waiting for benefits">{t('opt_price_waiting')}</option>
                     </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 pointer-events-none" />
                   </div>
                 </div>
+              )}
 
-                <div className="grid md:grid-cols-2 gap-4">
-                  {(dayPreference === "1 Day" || dayPreference === "2 Days") && (
-                    <div>
-                      <label className="block text-[11px] text-blue-400 font-bold uppercase tracking-wider mb-1.5">
-                        {t('survey_q6')}
-                      </label>
-                      <div className="relative">
-                        <select
-                          value={priceDay1}
-                          onChange={(e) => setPriceDay1(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-700 hover:border-blue-500/50 focus:border-blue-500 rounded-2xl px-5 py-3.5 text-sm text-blue-400 focus:outline-none transition-colors appearance-none cursor-pointer shadow-inner"
-                        >
-                          <option value="6,000-7,000 THB">{t('opt_price_vip')}</option>
-                          <option value="4,500-5,500 THB">{t('opt_price_premium')}</option>
-                          <option value="3,000-4,000 THB">{t('opt_price_regular')}</option>
-                          <option value="1,500-2,500 THB">{t('opt_price_economy')}</option>
-                          <option value="Waiting for benefits">{t('opt_price_waiting')}</option>
-                        </select>
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 pointer-events-none" />
-                      </div>
-                    </div>
-                  )}
-
-                  {(dayPreference === "2 Days") && (
-                    <div>
-                      <label className="block text-[11px] text-amber-500 font-bold uppercase tracking-wider mb-1.5">
-                        {t('survey_q7')}
-                      </label>
-                      <div className="relative">
-                        <select
-                          value={priceDay2}
-                          onChange={(e) => setPriceDay2(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-700 hover:border-amber-500/50 focus:border-amber-500 rounded-2xl px-5 py-3.5 text-sm text-amber-400 focus:outline-none transition-colors appearance-none cursor-pointer shadow-inner"
-                        >
-                          <option value="6,000-7,000 THB">{t('opt_price_vip')}</option>
-                          <option value="4,500-5,500 THB">{t('opt_price_premium')}</option>
-                          <option value="3,000-4,000 THB">{t('opt_price_regular')}</option>
-                          <option value="1,500-2,500 THB">{t('opt_price_economy')}</option>
-                          <option value="Waiting for benefits">{t('opt_price_waiting')}</option>
-                        </select>
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-400 pointer-events-none" />
-                      </div>
-                    </div>
-                  )}
+              {(dayPreference === "2 Days") && (
+                <div>
+                  <label className="block text-[11px] text-amber-500 font-bold uppercase tracking-wider mb-1.5">
+                    {t('survey_q7')}
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={priceDay2}
+                      onChange={(e) => setPriceDay2(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 hover:border-amber-500/50 focus:border-amber-500 rounded-2xl px-5 py-3.5 text-sm text-amber-400 focus:outline-none transition-colors appearance-none cursor-pointer shadow-inner"
+                    >
+                      <option value="6,000-7,000 THB">{t('opt_price_vip')}</option>
+                      <option value="4,500-5,500 THB">{t('opt_price_premium')}</option>
+                      <option value="3,000-4,000 THB">{t('opt_price_regular')}</option>
+                      <option value="1,500-2,500 THB">{t('opt_price_economy')}</option>
+                      <option value="Waiting for benefits">{t('opt_price_waiting')}</option>
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-400 pointer-events-none" />
+                  </div>
                 </div>
-              </>
-            ) : (
-              <div className="p-4 bg-slate-950 border border-slate-900 rounded-xl text-xs text-slate-400 leading-relaxed font-mono">
-                [SYSTEM: SKIP_SEATING_LOCK] เนื่องจากแผนเดินทางระบุไม่เข้าร่วม
-              </div>
-            )}
+              )}
+            </div>
 
             <div>
               <label className="block text-[11px] text-slate-350 font-bold uppercase tracking-wider mb-1.5">

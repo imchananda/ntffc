@@ -129,14 +129,24 @@ function doGet(e) {
     }
     
     // 4. Booking Counts & Prices
+    const isAttending = willAttend === "ไปแน่นอน / Definitely" || willAttend === "Definitely" ||
+                        willAttend === "มีโอกาสไป / Probably" || willAttend === "Probably";
+    if (isAttending) {
+      if (engDay === "Day 1" || engDay === "Both Days") {
+        stats.d1Booked++;
+      }
+      if (engDay === "Day 2" || engDay === "Both Days") {
+        stats.d2Booked++;
+      }
+    }
+    
+    // บันทึกความต้องการโซนราคาของทุกคน (รวมคนยังไม่แน่ใจเพื่อวัดดีมานด์)
     if (engDay === "Day 1" || engDay === "Both Days") {
-      stats.d1Booked++;
       if (priceD1) {
         stats.priceD1Demands[priceD1] = (stats.priceD1Demands[priceD1] || 0) + 1;
       }
     }
     if (engDay === "Day 2" || engDay === "Both Days") {
-      stats.d2Booked++;
       if (priceD2) {
         stats.priceD2Demands[priceD2] = (stats.priceD2Demands[priceD2] || 0) + 1;
       }
