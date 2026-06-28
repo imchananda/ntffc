@@ -43,7 +43,7 @@ function doPost(e) {
     // Acquire lock to prevent race conditions during seat assignment (wait up to 30s)
     lock.waitLock(30000);
   } catch (err) {
-    return jsonResponse({ success: false, message: "ระบบหนาแน่นชั่วคราว กรุณาลองใหม่อีกครั้งในภายหลัง" });
+    return jsonResponse({ success: false, status: "error", message: "ระบบหนาแน่นชั่วคราว กรุณาลองใหม่อีกครั้งในภายหลัง" });
   }
 
   try {
@@ -54,52 +54,73 @@ function doPost(e) {
     try {
       data = JSON.parse(e.postData.contents);
     } catch (err) {
-      return jsonResponse({ success: false, message: "รูปแบบข้อมูลไม่ถูกต้อง (Invalid JSON format)" });
+      return jsonResponse({ success: false, status: "error", message: "รูปแบบข้อมูลไม่ถูกต้อง (Invalid JSON format)" });
     }
 
     const email = (data.email || "").trim().toLowerCase();
     const name = (data.name || "").trim();
-    const attending = (data.attending || "").trim();
+    const attending = (data.attending || data.willAttend || "").trim();
     const origin = (data.origin || "").trim();
-    const dayPreference = (data.dayPreference || "").trim();
-    const priceDay1 = (data.priceDay1 || "").trim();
-    const priceDay2 = (data.priceDay2 || "").trim();
+    const dayPreference = (data.dayPreference || data.attendDays || "").trim();
+    const priceDay1 = (data.priceDay1 || data.priceD1 || "").trim();
+    const priceDay2 = (data.priceDay2 || data.priceD2 || "").trim();
     const comments = (data.comments || "").trim();
 
     // Basic validation
     if (!email || !name || !attending || !origin) {
-      return jsonResponse({ success: false, message: "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน" });
+      return jsonResponse({ success: false, status: "error", message: "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน" });
     }
 
     if (!isValidEmail(email)) {
-      return jsonResponse({ success: false, message: "รูปแบบอีเมลไม่ถูกต้อง หรือใช้อีเมลโฮสต์จำลอง" });
+      return jsonResponse({ success: false, status: "error", message: "รูปแบบอีเมลไม่ถูกต้อง หรือใช้อีเมลโฮสต์จำลอง" });
     }
 
     const responsesSheet = ss.getSheetByName("Responses");
-    const emailsRange = responsesSheet.getRange(2, 2, Math.max(1, responsesSheet.getLastRow() - 1), 1).getValues();
-    const emailList = emailsRange.map(row => String(row[0]).toLowerCase());
+    let emailList = [];
+    if (responsesSheet.getLastRow() > 1) {
+      const emailsRange = responsesSheet.getRange(2, 2, responsesSheet.getLastRow() - 1, 1).getValues();
+      emailList = emailsRange.map(row => String(row[0]).toLowerCase());
+    }
 
     if (emailList.includes(email)) {
-      return jsonResponse({ success: false, message: "อีเมลนี้ได้ทำการสำรวจไปแล้ว ไม่สามารถตอบซ้ำได้" });
+      return jsonResponse({ success: false, status: "error", message: "อีเมลนี้ได้ทำการสำรวจไปแล้ว ไม่สามารถตอบซ้ำได้" });
     }
 
     let seatDay1 = "";
     let seatDay2 = "";
 
+    // Robust parsing of attendance and day preferences
+    const isAttending = attending.indexOf("Definitely") !== -1 || 
+                        attending.indexOf("Probably") !== -1 ||
+                        attending === "Definitely" || 
+                        attending === "Probably" ||
+                        attending.indexOf("ไปแน่นอน") !== -1 ||
+                        attending.indexOf("มีโอกาสไป") !== -1;
+
+    const isDay1 = dayPreference.indexOf("Day 1") !== -1 || 
+                   dayPreference.indexOf("วันแรก") !== -1 || 
+                   dayPreference === "Both Days" || 
+                   dayPreference.indexOf("ทั้งสองวัน") !== -1;
+
+    const isDay2 = dayPreference.indexOf("Day 2") !== -1 || 
+                   dayPreference.indexOf("วันที่สอง") !== -1 || 
+                   dayPreference === "Both Days" || 
+                   dayPreference.indexOf("ทั้งสองวัน") !== -1;
+
     // Seating allocation logic
-    if (attending === "Definitely" || attending === "Probably") {
-      if (dayPreference === "Day 1" || dayPreference === "Both Days") {
+    if (isAttending) {
+      if (isDay1) {
         seatDay1 = allocateSeat(ss, "Seats_Day1", email);
         if (!seatDay1) {
-          throw new Error("ที่นั่งสำหรับวันที่ 1 เต็มแล้ว");
+          const waitlistNum = getWaitlistNumber(ss, 9); // Column 9 is Seat_Day1
+          seatDay1 = "Waitlist-D1-" + String(waitlistNum).padStart(4, '0');
         }
       }
-      if (dayPreference === "Day 2" || dayPreference === "Both Days") {
+      if (isDay2) {
         seatDay2 = allocateSeat(ss, "Seats_Day2", email);
         if (!seatDay2) {
-          // Rollback Day 1 seat if Day 2 fails
-          if (seatDay1) rollbackSeat(ss, "Seats_Day1", seatDay1);
-          throw new Error("ที่นั่งสำหรับวันที่ 2 เต็มแล้ว");
+          const waitlistNum = getWaitlistNumber(ss, 10); // Column 10 is Seat_Day2
+          seatDay2 = "Waitlist-D2-" + String(waitlistNum).padStart(4, '0');
         }
       }
     }
@@ -121,7 +142,10 @@ function doPost(e) {
 
     return jsonResponse({
       success: true,
+      status: "success",
       message: "บันทึกข้อมูลเรียบร้อยแล้ว!",
+      seatD1: seatDay1 || "-",
+      seatD2: seatDay2 || "-",
       ticket: {
         name: name,
         email: email,
@@ -134,10 +158,27 @@ function doPost(e) {
     });
 
   } catch (err) {
-    return jsonResponse({ success: false, message: err.message || err.toString() });
+    return jsonResponse({ success: false, status: "error", message: err.message || err.toString() });
   } finally {
     lock.releaseLock();
   }
+}
+
+/**
+ * Get the next waitlist number by counting existing waitlisted entries in the column
+ */
+function getWaitlistNumber(ss, dayColIndex) {
+  const sheet = ss.getSheetByName("Responses");
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return 1;
+  const values = sheet.getRange(2, dayColIndex, lastRow - 1, 1).getValues();
+  let count = 0;
+  for (let i = 0; i < values.length; i++) {
+    if (String(values[i][0]).indexOf("Waitlist") === 0) {
+      count++;
+    }
+  }
+  return count + 1;
 }
 
 /**
@@ -291,6 +332,8 @@ function calculateStats(ss) {
   let priceD2Demands = {};
   let attendingDays = { "Day 1": 0, "Day 2": 0, "Both Days": 0, "Undecided": 0 };
   let recentFeedbacks = [];
+  let waitlistCountD1 = 0;
+  let waitlistCountD2 = 0;
 
   responses.forEach(row => {
     const email = row[1];
@@ -300,10 +343,19 @@ function calculateStats(ss) {
     const dayPref = row[5];
     const pD1 = row[6];
     const pD2 = row[7];
+    const seatD1 = row[8];
+    const seatD2 = row[9];
     const comments = row[10];
 
     if (attending === "Definitely" || attending === "Probably") {
       totalAttending++;
+    }
+
+    if (seatD1 && String(seatD1).indexOf("Waitlist") === 0) {
+      waitlistCountD1++;
+    }
+    if (seatD2 && String(seatD2).indexOf("Waitlist") === 0) {
+      waitlistCountD2++;
     }
 
     if (origin) {
@@ -341,6 +393,10 @@ function calculateStats(ss) {
     totalAttending: totalAttending,
     bookedCountD1: bookedD1.length,
     bookedCountD2: bookedD2.length,
+    d1Booked: bookedD1.length, // Compatibility
+    d2Booked: bookedD2.length, // Compatibility
+    waitlistCountD1: waitlistCountD1,
+    waitlistCountD2: waitlistCountD2,
     bookedSeatsD1: bookedD1, // Array of booked Seat IDs
     bookedSeatsD2: bookedD2, // Array of booked Seat IDs
     origins: origins,

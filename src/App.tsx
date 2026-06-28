@@ -53,6 +53,8 @@ interface StatsData {
   totalAttending: number;
   bookedCountD1: number;
   bookedCountD2: number;
+  waitlistCountD1: number;
+  waitlistCountD2: number;
   bookedSeatsD1: string[];
   bookedSeatsD2: string[];
   origins: Record<string, number>;
@@ -248,6 +250,8 @@ function App() {
     totalAttending: 0,
     bookedCountD1: 0,
     bookedCountD2: 0,
+    waitlistCountD1: 0,
+    waitlistCountD2: 0,
     bookedSeatsD1: [],
     bookedSeatsD2: [],
     origins: {},
@@ -302,6 +306,8 @@ function App() {
         }
 
         let totalAttending = 0;
+        let waitlistCountD1 = 0;
+        let waitlistCountD2 = 0;
         const origins: Record<string, number> = {};
         const attendingDays = { "Day 1": 0, "Day 2": 0, "Both Days": 0, "Undecided": 0 };
         const priceD1Demands: Record<string, number> = {};
@@ -311,6 +317,12 @@ function App() {
         localResponses.forEach(r => {
           if (r.attending === "Definitely" || r.attending === "Probably") {
             totalAttending++;
+          }
+          if (r.seatDay1 && r.seatDay1.startsWith("Waitlist")) {
+            waitlistCountD1++;
+          }
+          if (r.seatDay2 && r.seatDay2.startsWith("Waitlist")) {
+            waitlistCountD2++;
           }
           if (r.origin) origins[r.origin] = (origins[r.origin] || 0) + 1;
           if (r.dayPreference) {
@@ -334,6 +346,8 @@ function App() {
           totalAttending,
           bookedCountD1: localBookedD1.length,
           bookedCountD2: localBookedD2.length,
+          waitlistCountD1,
+          waitlistCountD2,
           bookedSeatsD1: localBookedD1,
           bookedSeatsD2: localBookedD2,
           origins,
@@ -358,8 +372,10 @@ function App() {
             capacity: CAPACITY,
             totalResponses: json.stats.totalResponses || 0,
             totalAttending: json.stats.totalAttending || 0,
-            bookedCountD1: json.stats.d1Booked || 0,
-            bookedCountD2: json.stats.d2Booked || 0,
+            bookedCountD1: json.stats.bookedCountD1 || json.stats.d1Booked || 0,
+            bookedCountD2: json.stats.bookedCountD2 || json.stats.d2Booked || 0,
+            waitlistCountD1: json.stats.waitlistCountD1 || 0,
+            waitlistCountD2: json.stats.waitlistCountD2 || 0,
             bookedSeatsD1: [],
             bookedSeatsD2: [],
             origins: json.stats.origins || {},
@@ -541,11 +557,11 @@ function App() {
               {/* Left Column - Mockup welcome details */}
               <div className="lg:col-span-7 space-y-6 text-center animate-in fade-in duration-300">
                 <div className="space-y-2">
-                  <h1 className="text-5xl md:text-7xl font-extrabold tracking-wider leading-none select-none text-transparent bg-gradient-to-r from-[#5caaff] via-[#b6a0ff] to-[#ffb6f5] bg-clip-text font-sans">
+                  <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-wider leading-none select-none text-transparent bg-gradient-to-r from-[#5caaff] via-[#b6a0ff] to-[#ffb6f5] bg-clip-text font-sans">
                     {t('title')}
                   </h1>
                   <div 
-                    className="text-5xl md:text-[80px] font-bold italic tracking-wide text-[#f3ce48] pl-2 -mt-4 drop-shadow-[0_0_12px_rgba(243,206,72,0.6)] select-none"
+                    className="text-4xl sm:text-5xl md:text-[80px] font-bold italic tracking-wide text-[#f3ce48] pl-0 sm:pl-2 -mt-4 drop-shadow-[0_0_12px_rgba(243,206,72,0.6)] select-none"
                     style={{ fontFamily: "'Kaushan Script', cursive" }}
                   >
                     {t('subtitle')}
@@ -573,7 +589,7 @@ function App() {
                   {/* Premium Survey Button */}
                   <button
                     onClick={() => setIsSurveyOpen(true)}
-                    className="relative group bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400/50 text-white rounded-2xl p-4 flex items-center justify-between shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] active:scale-95 transition-all cursor-pointer w-full sm:w-64 overflow-hidden"
+                    className="relative group bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400/50 text-white rounded-2xl p-4 flex items-center justify-between shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] active:scale-95 transition-all cursor-pointer w-full max-w-[320px] sm:max-w-none sm:w-64 overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full -skew-x-12 -translate-x-full transition-transform duration-700 ease-out"></div>
                     <div className="flex items-center gap-4 relative z-10">
@@ -593,7 +609,7 @@ function App() {
                     onClick={() => {
                       document.getElementById("seating-chart")?.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    className="relative group bg-slate-900/80 backdrop-blur-md border border-[#f3ce48]/40 text-[#f3ce48] rounded-2xl p-4 flex items-center justify-between shadow-[0_0_15px_rgba(243,206,72,0.1)] hover:shadow-[0_0_25px_rgba(243,206,72,0.25)] hover:bg-slate-800/80 active:scale-95 transition-all cursor-pointer w-full sm:w-64 overflow-hidden"
+                    className="relative group bg-slate-900/80 backdrop-blur-md border border-[#f3ce48]/40 text-[#f3ce48] rounded-2xl p-4 flex items-center justify-between shadow-[0_0_15px_rgba(243,206,72,0.1)] hover:shadow-[0_0_25px_rgba(243,206,72,0.25)] hover:bg-slate-800/80 active:scale-95 transition-all cursor-pointer w-full max-w-[320px] sm:max-w-none sm:w-64 overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-[#f3ce48]/10 group-hover:translate-x-full -skew-x-12 -translate-x-full transition-transform duration-700 ease-out"></div>
                     <div className="flex items-center gap-4 relative z-10">
@@ -1099,24 +1115,34 @@ function SurveyFormView({
           return "";
         };
 
+        const getWaitlistNum = (responses: ResponseData[], dayCol: "seatDay1" | "seatDay2") => {
+          let count = 0;
+          for (const r of responses) {
+            if (r[dayCol] && r[dayCol].startsWith("Waitlist")) {
+              count++;
+            }
+          }
+          return count + 1;
+        };
+
         if (attending === "Definitely" || attending === "Probably") {
           if (dayPreference === "Day 1" || dayPreference === "Both Days") {
             seatDay1 = getNextSeat(localBookedD1);
             if (!seatDay1) {
-              setErrorMsg("ความจุที่นั่ง Day 1 เต็มความจุ 3,492 แล้ว!");
-              setLoading(false);
-              return;
+              const wlNum = getWaitlistNum(localResponses, "seatDay1");
+              seatDay1 = `Waitlist-D1-${String(wlNum).padStart(4, '0')}`;
+            } else {
+              localBookedD1.push(seatDay1);
             }
-            localBookedD1.push(seatDay1);
           }
           if (dayPreference === "Day 2" || dayPreference === "Both Days") {
             seatDay2 = getNextSeat(localBookedD2);
             if (!seatDay2) {
-              setErrorMsg("ความจุที่นั่ง Day 2 เต็มความจุ 3,492 แล้ว!");
-              setLoading(false);
-              return;
+              const wlNum = getWaitlistNum(localResponses, "seatDay2");
+              seatDay2 = `Waitlist-D2-${String(wlNum).padStart(4, '0')}`;
+            } else {
+              localBookedD2.push(seatDay2);
             }
-            localBookedD2.push(seatDay2);
           }
         }
 
@@ -1960,7 +1986,10 @@ function AdminDashboardView({
               <strong className="text-3xl font-black text-purple-400 tracking-tight">{stats.bookedCountD1.toLocaleString()}</strong>
               <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()}</span>
             </div>
-            <span className="text-xs text-purple-400 font-bold">{((stats.bookedCountD1 / CAPACITY) * 100).toFixed(2)}%</span>
+            <div className="flex items-center justify-between mt-1 text-xs">
+              <span className="text-purple-400 font-bold">{((stats.bookedCountD1 / CAPACITY) * 100).toFixed(2)}%</span>
+              <span className="text-slate-400">คิวสำรอง: <span className="text-purple-300 font-bold">{(stats.waitlistCountD1 || 0).toLocaleString()} คน</span></span>
+            </div>
           </div>
         </div>
 
@@ -1976,7 +2005,10 @@ function AdminDashboardView({
               <strong className="text-3xl font-black text-amber-400 tracking-tight">{stats.bookedCountD2.toLocaleString()}</strong>
               <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()}</span>
             </div>
-            <span className="text-xs text-amber-400 font-bold">{((stats.bookedCountD2 / CAPACITY) * 100).toFixed(2)}%</span>
+            <div className="flex items-center justify-between mt-1 text-xs">
+              <span className="text-amber-400 font-bold">{((stats.bookedCountD2 / CAPACITY) * 100).toFixed(2)}%</span>
+              <span className="text-slate-400">คิวสำรอง: <span className="text-amber-300 font-bold">{(stats.waitlistCountD2 || 0).toLocaleString()} คน</span></span>
+            </div>
           </div>
         </div>
         </div>
