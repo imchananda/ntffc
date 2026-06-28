@@ -66,7 +66,9 @@ function doGet(e) {
     priceD2Demands: {},
     recentFeedbacks: [],
     planCounts: { "Definitely": 0, "Probably": 0, "Not sure yet": 0 }, // นับสถิติจริงจากแผนการเข้าชม
-    undecidedResponses: [] // รายชื่อคนยังไม่แน่ใจแยกเฉพาะ
+    undecidedResponses: [], // รายชื่อคนยังไม่แน่ใจแยกเฉพาะ
+    undecidedCountD1: 0, // จำนวนคนยังไม่แน่ใจแยกวัน
+    undecidedCountD2: 0  // จำนวนคนยังไม่แน่ใจแยกวัน
   };
   
   // Mapping Thai values back to English keys for the Dashboard Charts
@@ -106,6 +108,16 @@ function doGet(e) {
       stats.planCounts["Probably"]++;
     } else {
       stats.planCounts["Not sure yet"]++;
+      
+      // คำนวณความต้องการวันสำหรับคนที่ยังไม่แน่ใจ
+      const engDay = daysMap[attendDays] || attendDays;
+      if (engDay === "Day 1" || engDay === "Both Days") {
+        stats.undecidedCountD1++;
+      }
+      if (engDay === "Day 2" || engDay === "Both Days") {
+        stats.undecidedCountD2++;
+      }
+
       // แยกข้อมูลเก็บไว้สำหรับไปแสดงผลในตาราง Admin หลังบ้านเฉพาะ
       stats.undecidedResponses.push({
         timestamp: timestamp,

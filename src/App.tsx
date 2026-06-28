@@ -17,7 +17,8 @@ import {
   ChevronDown,
   Sparkles,
   Map,
-  Globe
+  Globe,
+  HelpCircle
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -75,6 +76,8 @@ interface StatsData {
     origin: string;
     comments: string;
   }>;
+  undecidedCountD1?: number;
+  undecidedCountD2?: number;
 }
 
 // Seat Grid Constants
@@ -268,7 +271,9 @@ function App() {
     priceD2Demands: {},
     recentFeedbacks: [],
     planCounts: { "Definitely": 0, "Probably": 0, "Not sure yet": 0 },
-    undecidedResponses: []
+    undecidedResponses: [],
+    undecidedCountD1: 0,
+    undecidedCountD2: 0
   });
 
   const [lastTicket, setLastTicket] = useState<{
@@ -325,6 +330,8 @@ function App() {
         const feedbacks: Array<{ timestamp: string; name: string; email: string; comments: string }> = [];
         const planCounts = { "Definitely": 0, "Probably": 0, "Not sure yet": 0 };
         const undecidedResponses: Array<{ timestamp: string; name: string; email: string; origin: string; comments: string }> = [];
+        let undecidedCountD1 = 0;
+        let undecidedCountD2 = 0;
 
         localResponses.forEach(r => {
           if (r.attending === "Definitely" || r.attending === "Probably") {
@@ -333,6 +340,21 @@ function App() {
             if (r.attending === "Probably") planCounts["Probably"]++;
           } else {
             planCounts["Not sure yet"]++;
+            
+            let mapped = "Undecided";
+            if (r.dayPreference.indexOf("2") !== -1 || r.dayPreference.indexOf("Both") !== -1) {
+              mapped = "Both Days";
+            } else if (r.dayPreference.indexOf("1") !== -1 || r.dayPreference.indexOf("Day 1") !== -1) {
+              mapped = "Day 1";
+            }
+            
+            if (mapped === "Day 1" || mapped === "Both Days") {
+              undecidedCountD1++;
+            }
+            if (mapped === "Both Days") {
+              undecidedCountD2++;
+            }
+
             undecidedResponses.push({
               timestamp: r.timestamp,
               email: r.email,
@@ -386,7 +408,9 @@ function App() {
           priceD2Demands,
           recentFeedbacks: feedbacks.slice(0, 50),
           planCounts,
-          undecidedResponses
+          undecidedResponses,
+          undecidedCountD1,
+          undecidedCountD2
         });
         setIsRefreshing(false);
       }, 250);
@@ -416,7 +440,9 @@ function App() {
             priceD2Demands: json.stats.priceD2Demands || {},
             recentFeedbacks: json.stats.recentFeedbacks || [],
             planCounts: json.stats.planCounts || { "Definitely": 0, "Probably": 0, "Not sure yet": 0 },
-            undecidedResponses: json.stats.undecidedResponses || []
+            undecidedResponses: json.stats.undecidedResponses || [],
+            undecidedCountD1: json.stats.undecidedCountD1 || 0,
+            undecidedCountD2: json.stats.undecidedCountD2 || 0
           });
         } else {
           setServerError("เกิดข้อผิดพลาดในการโหลดข้อมูลสถิติ");
@@ -1993,7 +2019,7 @@ function AdminDashboardView({
 
       {/* KPI READOUTS */}
       {activeTab === 'overview' && (
-      <div id="overview" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 scroll-mt-20">
+      <div id="overview" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 scroll-mt-20">
         {/* Card 1: Blue */}
         <div className="bg-[#0b1b36] border border-[#1e3a8a] rounded-2xl p-5 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
@@ -2017,6 +2043,23 @@ function AdminDashboardView({
           <div className="relative z-10">
             <strong className="text-3xl font-black text-emerald-400 block tracking-tight">{stats.totalAttending.toLocaleString()}</strong>
             <span className="text-xs text-slate-400">คน <span className="text-emerald-500 ml-1">({stats.totalResponses > 0 ? ((stats.totalAttending / stats.totalResponses) * 100).toFixed(2) : 0}%)</span></span>
+          </div>
+        </div>
+
+        {/* Card 3: Orange (Undecided) */}
+        <div className="bg-[#241a15] border border-[#78350f] rounded-2xl p-5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-650/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+          <div className="flex items-center gap-2 mb-3 relative z-10">
+            <div className="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg"><HelpCircle className="w-3.5 h-3.5" /></div>
+            <span className="text-xs text-slate-300 font-bold">ผู้ยังไม่แน่ใจ</span>
+          </div>
+          <div className="relative z-10">
+            <strong className="text-3xl font-black text-orange-450 block tracking-tight">{(stats.planCounts?.["Not sure yet"] || 0).toLocaleString()}</strong>
+            <div className="flex items-center justify-between mt-1 text-[11px] text-slate-400">
+              <span>DAY 1: <span className="text-orange-300 font-bold">{(stats.undecidedCountD1 || 0).toLocaleString()} คน</span></span>
+              <span className="mx-1">|</span>
+              <span>DAY 2: <span className="text-orange-300 font-bold">{(stats.undecidedCountD2 || 0).toLocaleString()} คน</span></span>
+            </div>
           </div>
         </div>
 
