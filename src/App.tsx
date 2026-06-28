@@ -18,7 +18,9 @@ import {
   Sparkles,
   Map,
   Globe,
-  HelpCircle
+  HelpCircle,
+  Menu,
+  X
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -1803,6 +1805,7 @@ function AdminDashboardView({
 }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("overview");
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
     return localStorage.getItem("ntf_admin_auth") === "true";
   });
@@ -1942,32 +1945,49 @@ function AdminDashboardView({
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-[#050b14] text-white font-sans animate-in fade-in duration-300">
       
-      {/* LEFT SIDEBAR */}
-      <aside className="w-full md:w-[240px] bg-[#0a111d] border-r border-[#1c2536] p-4 flex flex-col shrink-0 md:h-screen md:sticky md:top-0 overflow-y-auto">
-        <div className="flex items-center gap-3 mb-8 px-2 mt-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-black text-xs text-white shadow-lg">NF</div>
-          <div className="leading-none">
-            <h1 className="font-bold text-xs tracking-widest text-slate-200 uppercase">NAMTANFILM</h1>
-            <h2 className="text-[#facc15] font-black text-[10px] tracking-widest mt-0.5">FANCON</h2>
+      {/* MOBILE BACKDROP */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden animate-in fade-in duration-200"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-[#0a111d] border-r border-[#1c2536] p-4 flex flex-col shrink-0 transition-transform duration-300 ease-in-out md:translate-x-0 md:relative md:w-[240px] md:h-screen md:sticky md:top-0 overflow-y-auto ${
+        isMobileSidebarOpen ? 'translate-x-0 shadow-2xl shadow-black/80' : '-translate-x-full'
+      }`}>
+        <div className="flex items-center justify-between mb-8 px-2 mt-2">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-black text-xs text-white shadow-lg">NF</div>
+            <div className="leading-none">
+              <h1 className="font-bold text-xs tracking-widest text-slate-200 uppercase">NAMTANFILM</h1>
+              <h2 className="text-[#facc15] font-black text-[10px] tracking-widest mt-0.5">FANCON</h2>
+            </div>
           </div>
+          <button 
+            onClick={() => setIsMobileSidebarOpen(false)}
+            className="md:hidden p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
         <nav className="space-y-0.5 text-[11px] font-medium text-slate-400">
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('overview'); }} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${activeTab === 'overview' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}>
+          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('overview'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${activeTab === 'overview' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}>
             <LayoutGrid className="w-4 h-4" /> ภาพรวม
           </a>
           
           <div className="pt-5 pb-2 px-3 text-[9px] font-bold uppercase tracking-wider text-slate-600">ข้อมูลการตอบแบบสำรวจ</div>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('responses'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'responses' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ผู้ตอบแบบสำรวจ</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('undecided'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'undecided' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ผู้ที่ยังไม่แน่ใจ</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('demographics'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'demographics' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MapPin className="w-4 h-4" /> แหล่งที่มาของผู้เข้าร่วม</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('prices'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'prices' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><TrendingUp className="w-4 h-4" /> ความสนใจบัตร</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('responses'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'responses' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ผู้ตอบแบบสำรวจ</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('undecided'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'undecided' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ผู้ที่ยังไม่แน่ใจ</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('demographics'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'demographics' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MapPin className="w-4 h-4" /> แหล่งที่มาของผู้เข้าร่วม</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('prices'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'prices' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><TrendingUp className="w-4 h-4" /> ความสนใจบัตร</a>
           
           <div className="pt-5 pb-2 px-3 text-[9px] font-bold uppercase tracking-wider text-slate-600">ที่นั่งและผังคอนเสิร์ต</div>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('seatingD1'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'seatingD1' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><LayoutGrid className="w-4 h-4" /> ผังที่นั่ง DAY 1</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('seatingD2'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'seatingD2' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><LayoutGrid className="w-4 h-4" /> ผังที่นั่ง DAY 2</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('seatingD1'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'seatingD1' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><LayoutGrid className="w-4 h-4" /> ผังที่นั่ง DAY 1</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('seatingD2'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'seatingD2' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><LayoutGrid className="w-4 h-4" /> ผังที่นั่ง DAY 2</a>
           
           <div className="pt-5 pb-2 px-3 text-[9px] font-bold uppercase tracking-wider text-slate-600">ความคิดเห็น</div>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('feedbacks'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'feedbacks' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ความคิดเห็น & ข้อเสนอแนะ</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('feedbacks'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'feedbacks' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ความคิดเห็น & ข้อเสนอแนะ</a>
           
           <div className="pt-5 pb-2 px-3 text-[9px] font-bold uppercase tracking-wider text-slate-600">ตั้งค่า</div>
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('settings'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><Lock className="w-4 h-4" /> ตั้งค่าระบบ</a>
@@ -1984,8 +2004,29 @@ function AdminDashboardView({
         </div>
       </aside>
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 p-4 md:p-8 overflow-x-hidden space-y-6">
+      {/* MAIN CONTENT CONTAINER */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+        {/* Mobile Header Bar */}
+        <header className="flex items-center justify-between px-5 py-3.5 bg-[#0a111d] border-b border-[#1c2536] md:hidden shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <span className="font-bold text-xs tracking-wider text-slate-200 uppercase">NAMTANFILM FANCON</span>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-xs font-bold text-slate-400 hover:text-white px-3 py-1 bg-slate-900 border border-slate-800 rounded-lg"
+          >
+            ออก
+          </button>
+        </header>
+
+        {/* MAIN CONTENT */}
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto space-y-6">
         
         {/* HEADER CONTROLS */}
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -2459,6 +2500,7 @@ function AdminDashboardView({
 
       {/* END OF MAIN CONTENT */}
       </main>
+      </div>
     </div>
   );
 }
