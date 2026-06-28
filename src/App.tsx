@@ -1527,6 +1527,35 @@ function ETicketView({
     ticketsToShow.push({ id: 'single', images: getTicketImagesForTier(singleTier), label: 'TICKET' });
   }
 
+  // Download a single image (handles mobile and in-app browser fallbacks)
+  const downloadSingleImage = async (url: string, filename: string) => {
+    try {
+      const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+      const isInApp = /Line|FBAN|FBAV|Instagram|Twitter|Threads|Pinterest/i.test(ua);
+
+      if (isInApp) {
+        // In-app browsers (LINE, Facebook, etc.) do not support direct downloads
+        window.open(url, '_blank');
+        return;
+      }
+
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("Download single image failed", err);
+      // Fallback: open in new tab for manual saving
+      window.open(url, '_blank');
+    }
+  };
+
   // Download all ticket images
   const downloadBothTickets = async () => {
     setDownloading(true);
@@ -1536,6 +1565,18 @@ function ETicketView({
         sides.push({ url: t.images.front, filename: `NTF_Ticket_${t.id}_Front_${ticket.name.replace(/\s+/g, '_')}.jpg` });
         sides.push({ url: t.images.back, filename: `NTF_Ticket_${t.id}_Back_${ticket.name.replace(/\s+/g, '_')}.jpg` });
       });
+
+      const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+      const isInApp = /Line|FBAN|FBAV|Instagram|Twitter|Threads|Pinterest/i.test(ua);
+
+      if (isInApp) {
+        alert(t('ticket_mobile_tip_sub'));
+        // Open the first image at least to guide the user
+        if (sides.length > 0) {
+          window.open(sides[0].url, '_blank');
+        }
+        return;
+      }
 
       for (const side of sides) {
         const response = await fetch(side.url);
@@ -1584,7 +1625,7 @@ function ETicketView({
         {ticketsToShow.map((tItem) => {
           const isFlipped = flippedState[tItem.id] || false;
           return (
-            <div key={tItem.id} className="flex flex-col items-center">
+            <div key={tItem.id} className="flex flex-col items-center w-full">
               {ticketsToShow.length > 1 && (
                 <span className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">{tItem.label}</span>
               )}
@@ -1627,9 +1668,46 @@ function ETicketView({
                   </div>
                 </div>
               </div>
+
+              {/* Individual Download Buttons */}
+              <div className="flex gap-2 mt-3 w-full max-w-[260px] justify-center z-10">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    downloadSingleImage(tItem.images.front, `NTF_Ticket_${tItem.id}_Front_${ticket.name.replace(/\s+/g, '_')}.jpg`);
+                  }}
+                  className="flex-1 py-1.5 px-2 bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 text-slate-300 hover:text-white font-bold rounded-lg text-[10px] flex items-center justify-center gap-1 active:scale-95 transition-all shadow-sm cursor-pointer"
+                >
+                  <Download className="w-3 h-3 text-blue-400" />
+                  <span>{t('ticket_btn_front')}</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    downloadSingleImage(tItem.images.back, `NTF_Ticket_${tItem.id}_Back_${ticket.name.replace(/\s+/g, '_')}.jpg`);
+                  }}
+                  className="flex-1 py-1.5 px-2 bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 text-slate-300 hover:text-white font-bold rounded-lg text-[10px] flex items-center justify-center gap-1 active:scale-95 transition-all shadow-sm cursor-pointer"
+                >
+                  <Download className="w-3 h-3 text-pink-400" />
+                  <span>{t('ticket_btn_back')}</span>
+                </button>
+              </div>
             </div>
           );
         })}
+      </div>
+
+      {/* Mobile/In-App Browser Tip Banner */}
+      <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-3 flex gap-2.5">
+        <AlertCircle className="text-blue-400 w-4 h-4 shrink-0 mt-0.5" />
+        <div className="space-y-0.5">
+          <p className="text-[10px] text-slate-300 leading-relaxed font-medium">
+            {t('ticket_mobile_tip')}
+          </p>
+          <p className="text-[9px] text-slate-400 leading-relaxed">
+            {t('ticket_mobile_tip_sub')}
+          </p>
+        </div>
       </div>
 
       {/* Action Buttons */}
