@@ -2104,15 +2104,33 @@ function AdminDashboardView({
   };
 
   const filteredFeedbacks = useMemo(() => {
-    if (!stats.recentFeedbacks) return [];
-    return stats.recentFeedbacks.filter(f => {
+    let list: Array<{ timestamp: string; name: string; email: string; comments: string }> = [];
+    if (stats.allResponses && stats.allResponses.length > 0) {
+      // Extract all actual comments from the full responses list
+      list = stats.allResponses
+        .filter(r => r.comments && r.comments !== "-" && r.comments.trim() !== "")
+        .map(r => ({
+          timestamp: r.timestamp,
+          name: r.name,
+          email: r.email,
+          comments: r.comments
+        }));
+    } else if (stats.recentFeedbacks) {
+      // Fallback if allResponses is not loaded yet
+      list = stats.recentFeedbacks;
+    }
+
+    // Sort by timestamp (newest first)
+    list = [...list].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    return list.filter(f => {
       const name = String(f.name || '').toLowerCase();
       const email = String(f.email || '').toLowerCase();
       const comments = String(f.comments || '').toLowerCase();
       const search = feedbackSearch.toLowerCase();
       return name.includes(search) || email.includes(search) || comments.includes(search);
     });
-  }, [stats.recentFeedbacks, feedbackSearch]);
+  }, [stats.allResponses, stats.recentFeedbacks, feedbackSearch]);
 
   const ITEMS_PER_PAGE = 20;
   const totalFeedbackPages = Math.ceil(filteredFeedbacks.length / ITEMS_PER_PAGE);
