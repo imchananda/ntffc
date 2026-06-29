@@ -21,7 +21,9 @@
   "map_booked_d2": "已预订 (Day 2)",
   "map_available": "可选",
   "map_btn_d1": "Day 1 座位图",
-  "map_btn_d2": "Day 2 座位图",
+  "map_btn_d2": "Day 2 座位图 (如追加场次)",
+  "btn_letter": "致 @GMMTV 的信",
+  "btn_letter_sub": "阅读粉丝心声",
   "map_hover_hint": "将鼠标悬停以查看区域和座位详细信息",
   "map_progress": "预订进度",
   "map_zone": "区域",
@@ -85,5 +87,8 @@
   "opt_price_premium": "4,500-5,500 泰铢",
   "opt_price_regular": "3,000-4,000 泰铢",
   "opt_price_economy": "1,500-2,500 泰铢",
-  "opt_price_waiting": "等待福利公布后再做决定"
+  "opt_price_waiting": "等待福利公布后再做决定",
+  "popup_title": "致 @GMMTV 的信",
+  "popup_btn_open_link": "打开链接",
+  "popup_btn_close": "关闭"
 }

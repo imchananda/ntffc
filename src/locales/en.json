@@ -21,7 +21,9 @@
   "map_booked_d2": "Booked (Day 2)",
   "map_available": "Available",
   "map_btn_d1": "Day 1 Map",
-  "map_btn_d2": "Day 2 Map",
+  "map_btn_d2": "Day 2 Map (Additional Show)",
+  "btn_letter": "Letter to @GMMTV",
+  "btn_letter_sub": "Read fans' thoughts",
   "map_hover_hint": "Hover to view zone and seat details",
   "map_progress": "Booking Progress",
   "map_zone": "Zone",
@@ -85,5 +87,8 @@
   "opt_price_premium": "4,500-5,500 THB",
   "opt_price_regular": "3,000-4,000 THB",
   "opt_price_economy": "1,500-2,500 THB",
-  "opt_price_waiting": "Waiting for benefits announcement"
+  "opt_price_waiting": "Waiting for benefits announcement",
+  "popup_title": "Letter to @GMMTV",
+  "popup_btn_open_link": "Open Link",
+  "popup_btn_close": "Close"
 }

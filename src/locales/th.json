@@ -21,7 +21,9 @@
   "map_booked_d2": "จองแล้ว (Day 2)",
   "map_available": "ว่าง",
   "map_btn_d1": "ผัง Day 1",
-  "map_btn_d2": "ผัง Day 2",
+  "map_btn_d2": "ผัง Day 2 (กรณีเพิ่มรอบแสดง)",
+  "btn_letter": "จดหมายถึง @GMMTV",
+  "btn_letter_sub": "อ่านความในใจแฟนๆ",
   "map_hover_hint": "ชี้เมาส์เพื่อดูข้อมูลโซนและจำนวนที่นั่ง",
   "map_progress": "ความคืบหน้าการจอง",
   "map_zone": "โซน",
@@ -85,5 +87,8 @@
   "opt_price_premium": "4,500-5,500 บาท",
   "opt_price_regular": "3,000-4,000 บาท",
   "opt_price_economy": "1,500-2,500 บาท",
-  "opt_price_waiting": "รอประกาศสิทธิประโยชน์ก่อนตัดสินใจ"
+  "opt_price_waiting": "รอประกาศสิทธิประโยชน์ก่อนตัดสินใจ",
+  "popup_title": "จดหมายถึง @GMMTV",
+  "popup_btn_open_link": "เปิดลิงก์",
+  "popup_btn_close": "ปิด"
 }

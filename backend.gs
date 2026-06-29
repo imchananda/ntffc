@@ -69,7 +69,8 @@ function doGet(e) {
     attendDays: headers.indexOf("attend_days") !== -1 ? headers.indexOf("attend_days") : headers.indexOf("attenddays"),
     priceD1: headers.indexOf("price_day1") !== -1 ? headers.indexOf("price_day1") : headers.indexOf("priced1"),
     priceD2: headers.indexOf("price_day2") !== -1 ? headers.indexOf("price_day2") : headers.indexOf("priced2"),
-    comments: headers.indexOf("comments")
+    comments: headers.indexOf("comments"),
+    weight: headers.indexOf("weight")
   };
   
   // Fallback to default indices if headers are not found
@@ -82,6 +83,7 @@ function doGet(e) {
   if (colIndex.priceD1 === -1) colIndex.priceD1 = 6;
   if (colIndex.priceD2 === -1) colIndex.priceD2 = 7;
   if (colIndex.comments === -1) colIndex.comments = 8;
+  if (colIndex.weight === -1) colIndex.weight = -1;
 
   // Skip header row
   const rows = data.slice(1);
@@ -140,6 +142,8 @@ function doGet(e) {
     const priceD1 = String(row[colIndex.priceD1] || "");
     const priceD2 = String(row[colIndex.priceD2] || "");
     const comments = String(row[colIndex.comments] || "");
+    const weightVal = colIndex.weight !== -1 ? Number(row[colIndex.weight]) : 1;
+    const weight = isNaN(weightVal) ? 1 : weightVal;
     
     // เช็กสถานะการเข้าร่วมเพื่อทำสถิติจริงและแยกรายชื่อผู้ที่ "ยังไม่แน่ใจ"
     const isAttending = willAttend === "ไปแน่นอน / Definitely" || willAttend === "Definitely" ||
@@ -231,7 +235,8 @@ function doGet(e) {
       attendDays: attendDays,
       priceD1: priceD1,
       priceD2: priceD2,
-      comments: comments || "-"
+      comments: comments || "-",
+      weight: weight
     });
   });
   

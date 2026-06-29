@@ -19,7 +19,9 @@ import {
   HelpCircle,
   Menu,
   LogOut,
-  X
+  X,
+  ExternalLink,
+  Mail
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -140,19 +142,19 @@ function generateSeatMap() {
   }
 
   const tlLengths = [3, 4, 6, 8, 10, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11]; // 15 rows, 141 seats
-  
+
   // Top row blocks (Y=0)
-  addStairLeft(9, 0, tlLengths, 'REGULAR', 'A1'); 
+  addStairLeft(9, 0, tlLengths, 'REGULAR', 'A1');
   addRect(22, 0, 20, 15, 'PREMIUM', 'A2');
   addRect(56, 0, 20, 15, 'PREMIUM', 'A3');
   addStairRight(78, 0, tlLengths, 'REGULAR', 'A4');
 
   // Middle row blocks (Y=17)
   addRect(9, 17, 11, 15, 'PREMIUM', 'B1');
-  
+
   // B2 (L-Shape: 8x11 top, 12x4 bottom) - 136 seats
-  addRect(22, 17, 8, 11, 'VIP', 'B2'); 
-  addRect(22, 28, 12, 4, 'VIP', 'B2'); 
+  addRect(22, 17, 8, 11, 'VIP', 'B2');
+  addRect(22, 28, 12, 4, 'VIP', 'B2');
 
   // VIP Stage Front (New 24x4 block) - 96 seats
   addRect(37, 28, 24, 4, 'VIP', 'VIP Front');
@@ -181,7 +183,7 @@ function generateSeatMap() {
   addRect(65, 57, 22, 3, 'REGULAR', 'E4');
 
   // Bottom row (Y=62)
-  addRect(18, 62, 16, 13, 'ECONOMY', 'F1'); 
+  addRect(18, 62, 16, 13, 'ECONOMY', 'F1');
   addRect(37, 62, 20, 13, 'ECONOMY', 'F2');
   addRect(60, 62, 20, 13, 'ECONOMY', 'F3');
 
@@ -254,8 +256,10 @@ function App() {
   const [currentView, setCurrentView] = useState<"home" | "admin">("home");
   const [isSurveyOpen, setIsSurveyOpen] = useState(false);
   const [isTicketOpen, setIsTicketOpen] = useState(false);
+  const [selectedComment, setSelectedComment] = useState<CommentItem | null>(null);
+  const [isCommentPopupOpen, setIsCommentPopupOpen] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
-  const heroImages = ["/hero1.png", "/hero2.png"];
+  const heroImages = ["/h-1.png", "/h-2.png", "/h-3.png"];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -358,14 +362,14 @@ function App() {
             if (r.attending === "Probably") planCounts["Probably"]++;
           } else {
             planCounts["Not sure yet"]++;
-            
+
             let mapped = "Undecided";
             if (r.dayPreference.indexOf("2") !== -1 || r.dayPreference.indexOf("Both") !== -1) {
               mapped = "Both Days";
             } else if (r.dayPreference.indexOf("1") !== -1 || r.dayPreference.indexOf("Day 1") !== -1) {
               mapped = "Day 1";
             }
-            
+
             if (mapped === "Day 1") {
               undecidedCountD1++;
             } else if (mapped === "Both Days") {
@@ -439,9 +443,9 @@ function App() {
             timestamp: r.timestamp,
             email: r.email,
             name: r.name,
-            willAttend: r.attending === "Definitely" ? "ไปแน่นอน / Definitely" 
-                      : r.attending === "Probably" ? "มีโอกาสไป / Probably" 
-                      : "ยังไม่แน่ใจ / Undecided",
+            willAttend: r.attending === "Definitely" ? "ไปแน่นอน / Definitely"
+              : r.attending === "Probably" ? "มีโอกาสไป / Probably"
+                : "ยังไม่แน่ใจ / Undecided",
             origin: r.origin,
             attendDays: r.dayPreference,
             priceD1: r.priceDay1,
@@ -500,7 +504,7 @@ function App() {
   const handleSeedMockData = () => {
     const mockOrigins = ["Bangkok", "Bangkok Metropolitan", "Northern", "Central", "Eastern", "Northeastern", "Southern", "Western", "Overseas"];
     const mockPrices = ["6,000-7,000 THB", "4,500-5,500 THB", "3,000-4,000 THB", "1,500-2,500 THB", "Waiting for benefits"];
-    
+
     const tempResponses: ResponseData[] = [];
     const tempBookedD1: string[] = [];
     const tempBookedD2: string[] = [];
@@ -525,7 +529,7 @@ function App() {
     for (let i = 1; i <= 2531; i++) {
       const isAttending = i <= 1248;
       const attending = isAttending ? "Definitely" : "Not sure yet";
-      
+
       let dayPreference = "Undecided";
       let seatDay1 = "";
       let seatDay2 = "";
@@ -546,6 +550,29 @@ function App() {
         }
       }
 
+      const mockComments = [
+        "ตื่นเต้นมากค่ะ รอกดบัตรเลยยย 💛💙",
+        "Can't wait to see Namtan and Film! 🦄✨",
+        "ขอให้งานคอนเสิร์ตปังๆ นะคะ รักทั้งคู่เลย",
+        "NamtanFilm forever! Waiting for this day!",
+        "💛💙 🧡💜 จะไปเชียร์ทั้งสองวันเลยนะ",
+        "หวังว่าจะได้บัตร VIP นะคะ สาธุๆ",
+        "สนับสนุนเสมอนะคะ ยินดีด้วยกับคอนเสิร์ตครั้งแรก",
+        "Looking forward to the amazing performances!",
+        "期待她们的合作！加油！🇨🇳🇹🇭",
+        "ขอให้บัตรขายหมดเกลี้ยงใน 1 นาทีเลย!",
+        "รักพี่น้ำตาลพี่ฟิล์มมากๆ นะคะ จะคอยซัพพอร์ตตลอดไป",
+        "Waiting for the official benefits list!",
+        "คอนเสิร์ตใหญ่ครั้งแรก ต้องอลังการแน่นอนค่ะ",
+        "Best duo ever! NamtanFilm to the world! 🌍",
+        "อยากฟังเพลงคู่ของทั่งสองคนบนเวทีจังเลยค่ะ 🎵",
+        "Love from Taiwan! 🇹🇼 Waiting for the show!",
+        "ขอให้จัดรอบเพิ่มอีกเยอะๆ นะคะ คนอยากไปเยอะมาก",
+        "Namtan and Film are the best! See you there!",
+        "น้ำตาลฟิล์มคือที่สุดดด! เจอกันวันงานนะคะ",
+        "We love NamtanFilm! Fighting! 💛💙"
+      ];
+
       tempResponses.push({
         timestamp: new Date(Date.now() - i * 60000).toISOString(),
         email: `fan_${i}@ntf-fancon.club`,
@@ -557,7 +584,7 @@ function App() {
         priceDay2,
         seatDay1,
         seatDay2,
-        comments: i % 100 === 0 ? "ตื่นเต้นมากค่ะ รอกดบัตรเลยยย 💛💙" : ""
+        comments: i % 25 === 0 ? mockComments[(i / 25) % mockComments.length] : ""
       });
     }
 
@@ -583,6 +610,28 @@ function App() {
     return Number(((stats.bookedCountD2 / CAPACITY) * 100).toFixed(2));
   }, [stats.bookedCountD2]);
 
+  const commentsList = useMemo(() => {
+    if (!stats.allResponses) return [];
+    return stats.allResponses
+      .filter(r => r.comments && r.comments.trim() !== "" && r.comments.trim() !== "-")
+      .map((r, idx) => {
+        const fullText = r.comments.trim();
+        let shortText = fullText;
+        if (fullText.length > 40) {
+          const len = Math.floor(Math.random() * (40 - 24 + 1)) + 24;
+          shortText = fullText.substring(0, len) + "...";
+        }
+        return {
+          id: `comment-${idx}-${r.email}`,
+          shortText,
+          fullText,
+          createdAt: r.timestamp,
+          weight: 1,
+          index: idx + 1
+        };
+      });
+  }, [stats.allResponses]);
+
   // Toggle for showing/hiding Statistics Cards (managed by admins)
   const SHOW_STATS = showPublicStats;
 
@@ -590,31 +639,30 @@ function App() {
     <div className="min-h-screen relative overflow-x-hidden bg-[#04060d] text-slate-100 flex flex-col font-sans transition-all duration-300">
       {/* Background Image Layer with Lighting Effects */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <img 
-          src="/BG.jpg" 
-          className="w-full h-full object-cover opacity-50 mix-blend-lighten" 
-          alt="Background" 
+        <img
+          src="/BG.jpg"
+          className="w-full h-full object-cover opacity-50 mix-blend-lighten"
+          alt="Background"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/80 via-[#04060d]/85 to-[#020617]/95 backdrop-blur-[1px]"></div>
         <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] max-w-[800px] max-h-[800px] bg-blue-600/40 rounded-full blur-[120px] animate-float-1 mix-blend-screen"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] bg-amber-500/30 rounded-full blur-[100px] animate-float-2 mix-blend-screen"></div>
         <div className="absolute top-[20%] left-[30%] w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] bg-purple-600/20 rounded-full blur-[120px] animate-float-1 mix-blend-screen" style={{ animationDelay: '3s' }}></div>
       </div>
-      
+
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Language Switcher */}
-        <div className="absolute top-4 right-6 z-50 flex items-center gap-2 bg-slate-900/80 backdrop-blur border border-slate-700/50 p-1.5 rounded-2xl shadow-xl">
+        <div id="lang-switcher" className="absolute top-4 right-6 z-50 flex items-center gap-2 bg-slate-900/80 backdrop-blur border border-slate-700/50 p-1.5 rounded-2xl shadow-xl">
           <Globe className="w-4 h-4 text-slate-400 ml-2" />
           <div className="flex gap-1">
             {['th', 'en', 'zh'].map(lang => (
               <button
                 key={lang}
                 onClick={() => i18n.changeLanguage(lang)}
-                className={`px-3 py-1 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                  i18n.language === lang
+                className={`px-3 py-1 text-xs font-bold rounded-xl transition-all cursor-pointer ${i18n.language === lang
                     ? 'bg-blue-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
+                  }`}
               >
                 {lang === 'th' ? 'TH' : lang === 'en' ? 'EN' : 'ZH'}
               </button>
@@ -623,286 +671,363 @@ function App() {
         </div>
 
         {/* CORE WRAPPER - Centered in max-w-6xl, wider for admin */}
-        <main className={`flex-1 w-full mx-auto py-6 space-y-12 mt-12 md:mt-4 ${
-          currentView === 'admin' 
-            ? 'max-w-[1440px] px-4 md:px-8' 
-            : 'max-w-6xl px-6 md:px-12'
-        }`}>
-        {currentView === "admin" ? (
-          <AdminDashboardView
-            stats={stats}
-            apiMode={apiMode}
-            onRefresh={() => fetchData(apiMode, apiUrl)}
-            onClearMock={handleClearMockData}
-            onSeedMock={handleSeedMockData}
-            isRefreshing={isRefreshing}
-            serverError={serverError}
-            showPublicStats={showPublicStats}
-            setShowPublicStats={(val) => {
-              setShowPublicStats(val);
-              localStorage.setItem("ntf_show_public_stats", val ? "true" : "false");
-            }}
-            onClose={() => {
-              window.location.hash = "";
-              setCurrentView("home");
-            }}
-          />
-        ) : (
-          <>
-            {/* Main Interactive Grid matching the mockup */}
-            <div className="grid lg:grid-cols-12 gap-8 items-center min-h-[500px]">
-              
-              {/* Left Column - Mockup welcome details */}
-              <div className="lg:col-span-7 space-y-6 text-center animate-in fade-in duration-300">
-                <div className="space-y-2">
-                  <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-wider leading-none select-none text-transparent bg-gradient-to-r from-[#5caaff] via-[#b6a0ff] to-[#ffb6f5] bg-clip-text font-sans">
-                    {t('title')}
-                  </h1>
-                  <div 
-                    className="text-4xl sm:text-5xl md:text-[80px] font-bold italic tracking-wide text-[#f3ce48] pl-0 sm:pl-2 -mt-4 drop-shadow-[0_0_12px_rgba(243,206,72,0.6)] select-none"
-                    style={{ fontFamily: "'Kaushan Script', cursive" }}
-                  >
-                    {t('subtitle')}
+        <main className={`flex-1 w-full mx-auto py-6 space-y-12 mt-12 md:mt-4 ${currentView === 'admin'
+            ? 'max-w-[1440px] px-4 md:px-8'
+            : 'max-w-[1440px] px-6 md:px-12 lg:px-16'
+          }`}>
+          {currentView === "admin" ? (
+            <AdminDashboardView
+              stats={stats}
+              apiMode={apiMode}
+              onRefresh={() => fetchData(apiMode, apiUrl)}
+              onClearMock={handleClearMockData}
+              onSeedMock={handleSeedMockData}
+              isRefreshing={isRefreshing}
+              serverError={serverError}
+              showPublicStats={showPublicStats}
+              setShowPublicStats={(val) => {
+                setShowPublicStats(val);
+                localStorage.setItem("ntf_show_public_stats", val ? "true" : "false");
+              }}
+              onClose={() => {
+                window.location.hash = "";
+                setCurrentView("home");
+              }}
+            />
+          ) : (
+            <>
+              {/* Main Interactive Grid matching the mockup */}
+              <div className="grid lg:grid-cols-12 gap-0 lg:gap-8 items-center min-h-[500px] lg:min-h-[calc(100vh-80px)]">
+
+                {/* Left Column - Mockup welcome details */}
+                <div className="order-2 lg:order-1 lg:col-span-6 space-y-6 text-center lg:text-left animate-in fade-in duration-300 relative z-20 lg:-ml-12 xl:-ml-24">
+                  <div className="space-y-2">
+                    <h1 id="hero-title" className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-wider leading-none select-none text-transparent bg-gradient-to-r from-[#5caaff] via-[#b6a0ff] to-[#ffb6f5] bg-clip-text font-sans">
+                      {t('title')}
+                    </h1>
+                    <div
+                      id="hero-subtitle"
+                      className="text-4xl sm:text-5xl md:text-[80px] font-bold italic tracking-wide text-[#f3ce48] pl-0 sm:pl-2 -mt-4 drop-shadow-[0_0_12px_rgba(243,206,72,0.6)] select-none"
+                      style={{ fontFamily: "'Kaushan Script', cursive" }}
+                    >
+                      {t('subtitle')}
+                    </div>
+                  </div>
+
+                  {/* Location details with horizontal neon lines */}
+                  <div className="flex items-center justify-center lg:justify-start gap-4">
+                    <span className="h-[1.5px] w-12 bg-gradient-to-r from-transparent to-[#3b82f6]" />
+                    <span className="text-xs md:text-sm font-bold tracking-widest text-[#3b82f6] uppercase font-sans">
+                      {t('road_to')}
+                    </span>
+                    <span className="h-[1.5px] w-12 bg-gradient-to-l from-transparent to-[#3b82f6]" />
+                  </div>
+
+                  <p className="text-sm md:text-base text-slate-300 leading-relaxed font-medium px-4">
+                    {t('hero_desc_1')}
+                    <br />
+                    {t('hero_desc_2')} <span className="text-[#f3ce48] font-extrabold">{t('title')} {t('subtitle')}</span>
+                    <br />
+                    {t('hero_desc_3')} <span className="text-[#3b82f6] font-bold">Union Hall</span> {t('hero_desc_4')}
+                  </p>
+
+                  <div id="hero-ctas" className="pt-4 flex flex-col items-center lg:items-start justify-center gap-4">
+                    {/* Row 1: Survey Button (Blue) */}
+                    <div className="w-full flex justify-center lg:justify-start">
+                      <button
+                        onClick={() => setIsSurveyOpen(true)}
+                        className="relative group bg-transparent border border-blue-400/50 rounded-2xl p-4 flex items-center justify-between shadow-[0_0_15px_rgba(59,130,246,0.1)] hover:shadow-[0_0_25px_rgba(59,130,246,0.25)] hover:border-blue-400 hover:bg-blue-400/5 active:scale-95 transition-all cursor-pointer w-full max-w-[320px] sm:max-w-none sm:w-[528px] h-[84px] overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-blue-400/10 group-hover:translate-x-full -skew-x-12 -translate-x-full transition-transform duration-700 ease-out"></div>
+                        <div className="flex items-center gap-4 relative z-10">
+                          <div className="p-3 bg-blue-400/10 backdrop-blur-sm rounded-xl shrink-0 group-hover:scale-110 transition-transform border border-blue-400/20">
+                            <Sparkles className="w-6 h-6 text-blue-400" />
+                          </div>
+                          <div className="text-left">
+                            <span className="text-sm font-extrabold block tracking-wide text-transparent bg-gradient-to-r from-blue-300 via-indigo-200 to-blue-400 bg-clip-text drop-shadow-sm uppercase">{t('btn_survey')}</span>
+                            <span className="text-[10px] text-blue-200/80 block mt-0.5 font-medium uppercase tracking-wider">{t('btn_survey_sub')}</span>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-blue-400/70 group-hover:translate-x-1 transition-transform relative z-10" />
+                      </button>
+                    </div>
+
+                    {/* Row 2: Letter to GMMTV & Map Buttons (Gold & Fuchsia) */}
+                    <div className="w-full flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                      {/* Letter to GMMTV Button */}
+                      <button
+                        onClick={() => {
+                          document.getElementById("wall-header")?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="relative group bg-transparent border border-amber-400/50 rounded-2xl p-4 flex items-center justify-between shadow-[0_0_15px_rgba(251,191,36,0.1)] hover:shadow-[0_0_25px_rgba(251,191,36,0.25)] hover:border-amber-400 hover:bg-amber-400/5 active:scale-95 transition-all cursor-pointer w-full max-w-[320px] sm:max-w-none sm:w-64 h-[84px] overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-amber-400/10 group-hover:translate-x-full -skew-x-12 -translate-x-full transition-transform duration-700 ease-out"></div>
+                        <div className="flex items-center gap-4 relative z-10">
+                          <div className="p-3 bg-amber-400/10 backdrop-blur-sm rounded-xl shrink-0 group-hover:scale-110 transition-transform border border-amber-400/20">
+                            <Mail className="w-6 h-6 text-amber-400" />
+                          </div>
+                          <div className="text-left">
+                            <span className="text-sm font-extrabold block tracking-wide text-transparent bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-400 bg-clip-text drop-shadow-sm uppercase">{t('btn_letter')}</span>
+                            <span className="text-[10px] text-amber-200/80 block mt-0.5 font-medium uppercase tracking-wider">{t('btn_letter_sub')}</span>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-amber-400/70 group-hover:translate-x-1 transition-transform relative z-10" />
+                      </button>
+
+                      {/* Premium Concert map button */}
+                      <button
+                        onClick={() => {
+                          document.getElementById("seating-chart")?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="relative group bg-transparent border border-fuchsia-400/50 rounded-2xl p-4 flex items-center justify-between shadow-[0_0_15px_rgba(232,121,249,0.1)] hover:shadow-[0_0_25px_rgba(232,121,249,0.25)] hover:border-fuchsia-400 hover:bg-fuchsia-400/5 active:scale-95 transition-all cursor-pointer w-full max-w-[320px] sm:max-w-none sm:w-64 h-[84px] overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-fuchsia-400/10 group-hover:translate-x-full -skew-x-12 -translate-x-full transition-transform duration-700 ease-out"></div>
+                        <div className="flex items-center gap-4 relative z-10">
+                          <div className="p-3 bg-fuchsia-400/10 backdrop-blur-sm rounded-xl shrink-0 group-hover:scale-110 transition-transform border border-fuchsia-400/20">
+                            <Map className="w-6 h-6 text-fuchsia-400" />
+                          </div>
+                          <div className="text-left">
+                            <span className="text-sm font-extrabold block tracking-wide text-transparent bg-gradient-to-r from-purple-300 via-fuchsia-200 to-fuchsia-400 bg-clip-text drop-shadow-sm uppercase">{t('btn_map')}</span>
+                            <span className="text-[10px] text-fuchsia-200/80 block mt-0.5 font-medium uppercase tracking-wider">{t('btn_map_sub')}</span>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-fuchsia-400/70 group-hover:translate-x-1 transition-transform relative z-10" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                {/* Location details with horizontal neon lines */}
-                <div className="flex items-center justify-center gap-4">
-                  <span className="h-[1.5px] w-12 bg-gradient-to-r from-transparent to-[#3b82f6]" />
-                  <span className="text-xs md:text-sm font-bold tracking-widest text-[#3b82f6] uppercase font-sans">
-                    {t('road_to')}
-                  </span>
-                  <span className="h-[1.5px] w-12 bg-gradient-to-l from-transparent to-[#3b82f6]" />
+                {/* Right Column - Actresses portrait seamless blending */}
+                <div id="hero-images" className="order-1 lg:order-2 lg:col-span-6 flex items-center justify-center select-none pointer-events-none -mx-6 md:-mx-12 lg:mx-0">
+                  <div className="relative w-full h-[250px] md:h-[350px] lg:aspect-auto lg:h-[600px] flex items-center justify-center">
+                    
+                    {/* Glowing Spotlight Effect */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[450px] md:h-[450px] bg-[#3b82f6]/40 rounded-full blur-[100px] animate-pulse pointer-events-none" style={{ animationDuration: '4s' }}></div>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/4 -translate-y-1/3 w-[350px] h-[350px] md:w-[500px] md:h-[500px] bg-[#c026d3]/30 rounded-full blur-[120px] animate-pulse pointer-events-none" style={{ animationDuration: '6s', animationDelay: '1s' }}></div>
+
+                    {heroImages.map((src, idx) => (
+                      <img
+                        key={src}
+                        src={src}
+                        className={`absolute inset-0 w-full h-full object-contain transition-all duration-1000 ease-in-out ${idx === heroIndex ? 'opacity-75 z-10' : 'opacity-0 z-0'
+                          } scale-100 md:scale-[1.2] lg:scale-[2.4] translate-x-0 lg:translate-x-12 origin-center drop-shadow-[0_0_15px_rgba(30,58,138,0.5)]`}
+                        style={{
+                          maskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 50%, transparent 100%)',
+                          WebkitMaskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 50%, transparent 100%)'
+                        }}
+                        alt={`NamtanFilm Hero ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
                 </div>
 
-                <p className="text-sm md:text-base text-slate-300 leading-relaxed font-medium px-4">
-                  {t('hero_desc_1')}
-                  <br />
-                  {t('hero_desc_2')} <span className="text-[#f3ce48] font-extrabold">{t('title')} {t('subtitle')}</span>
-                  <br />
-                  {t('hero_desc_3')} <span className="text-[#3b82f6] font-bold">Union Hall</span> {t('hero_desc_4')}
-                </p>
+              </div>
 
-                <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-                  {/* Premium Survey Button */}
-                  <button
-                    onClick={() => setIsSurveyOpen(true)}
-                    className="relative group bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400/50 text-white rounded-2xl p-4 flex items-center justify-between shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] active:scale-95 transition-all cursor-pointer w-full max-w-[320px] sm:max-w-none sm:w-64 overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full -skew-x-12 -translate-x-full transition-transform duration-700 ease-out"></div>
-                    <div className="flex items-center gap-4 relative z-10">
-                      <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl shrink-0 group-hover:scale-110 transition-transform shadow-inner">
-                        <Sparkles className="w-6 h-6 text-white" />
+              {/* BOTTOM STATS CARD (Deep dark outline transparent) */}
+              {SHOW_STATS && (
+                <div className="bg-[#050813]/95 border border-slate-800/80 shadow-2xl rounded-[24px] p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-center">
+
+                  {/* Item 1 */}
+                  <div className="flex items-center gap-3.5 py-1">
+                    <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl shrink-0">
+                      <svg className="w-6 h-6 text-blue-450" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wide">{t('stats_total')}</span>
+                      <strong className="text-2xl font-bold text-blue-400 font-sans block mt-0.5">
+                        {stats.totalResponses.toLocaleString()} <span className="text-xs text-slate-500 font-normal">{t('stats_unit')}</span>
+                      </strong>
+                    </div>
+                  </div>
+
+                  {/* Item 2 */}
+                  <div className="flex items-center gap-3.5 py-1 border-t md:border-t-0 md:border-l border-slate-800/80 md:pl-6">
+                    <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl shrink-0">
+                      <svg className="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wide">{t('stats_attending')}</span>
+                      <strong className="text-2xl font-bold text-[#3b82f6] font-sans block mt-0.5">
+                        {stats.totalAttending.toLocaleString()} <span className="text-xs text-slate-500 font-normal">{t('stats_unit')}</span>
+                      </strong>
+                    </div>
+                  </div>
+
+                  {/* Item 3 */}
+                  <div className="flex items-center justify-between gap-3 py-1 border-t lg:border-t-0 lg:border-l border-slate-800/80 lg:pl-6">
+                    <div className="flex items-center gap-3.5">
+                      <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl shrink-0">
+                        <svg className="w-6 h-6 text-blue-450" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
                       </div>
-                      <div className="text-left">
-                        <span className="text-sm font-extrabold block tracking-wide drop-shadow-sm">{t('btn_survey')}</span>
-                        <span className="text-[10px] text-blue-100 block mt-0.5 font-medium uppercase tracking-wider">{t('btn_survey_sub')}</span>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wide">{t('stats_d1')}</span>
+                        <strong className="text-xl font-bold text-[#3b82f6] font-sans block mt-0.5">
+                          {stats.bookedCountD1.toLocaleString()} <span className="text-xs text-slate-500 font-normal">/ {CAPACITY.toLocaleString()}</span>
+                        </strong>
                       </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-white/80 group-hover:translate-x-1 transition-transform relative z-10" />
-                  </button>
+                    <CircularProgress percentage={percentD1} strokeColor="stroke-blue-500" />
+                  </div>
 
-                  {/* Premium Concert map button */}
-                  <button
-                    onClick={() => {
-                      document.getElementById("seating-chart")?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="relative group bg-slate-900/80 backdrop-blur-md border border-[#f3ce48]/40 text-[#f3ce48] rounded-2xl p-4 flex items-center justify-between shadow-[0_0_15px_rgba(243,206,72,0.1)] hover:shadow-[0_0_25px_rgba(243,206,72,0.25)] hover:bg-slate-800/80 active:scale-95 transition-all cursor-pointer w-full max-w-[320px] sm:max-w-none sm:w-64 overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-[#f3ce48]/10 group-hover:translate-x-full -skew-x-12 -translate-x-full transition-transform duration-700 ease-out"></div>
-                    <div className="flex items-center gap-4 relative z-10">
-                      <div className="p-3 bg-[#f3ce48]/15 rounded-xl shrink-0 group-hover:scale-110 transition-transform">
-                        <Map className="w-6 h-6 text-[#f3ce48]" />
+                  {/* Item 4 */}
+                  <div className="flex items-center justify-between gap-3 py-1 border-t lg:border-t-0 lg:border-l border-slate-800/80 lg:pl-6">
+                    <div className="flex items-center gap-3.5">
+                      <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-2xl shrink-0">
+                        <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
                       </div>
-                      <div className="text-left text-white">
-                        <span className="text-sm font-extrabold block tracking-wide drop-shadow-sm">{t('btn_map')}</span>
-                        <span className="text-[10px] text-[#f3ce48]/80 block mt-0.5 font-medium uppercase tracking-wider">{t('btn_map_sub')}</span>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wide">{t('stats_d2')}</span>
+                        <strong className="text-xl font-bold text-[#3b82f6] font-sans block mt-0.5">
+                          {stats.bookedCountD2.toLocaleString()} <span className="text-xs text-slate-500 font-normal">/ {CAPACITY.toLocaleString()}</span>
+                        </strong>
                       </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-[#f3ce48]/70 group-hover:translate-x-1 transition-transform relative z-10" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Right Column - Actresses portrait seamless blending */}
-              <div className="lg:col-span-5 flex items-center justify-center select-none pointer-events-none">
-                <div className="relative w-full aspect-[4/5] md:aspect-[3/4] lg:aspect-auto lg:h-[600px] flex items-center justify-center">
-                  {heroImages.map((src, idx) => (
-                    <img
-                      key={src}
-                      src={src}
-                      className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-1000 ease-in-out ${
-                        idx === heroIndex ? 'opacity-100' : 'opacity-0'
-                      }`}
-                      alt={`NamtanFilm Hero ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-            </div>
-
-            {/* BOTTOM STATS CARD (Deep dark outline transparent) */}
-            {SHOW_STATS && (
-              <div className="bg-[#050813]/95 border border-slate-800/80 shadow-2xl rounded-[24px] p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-center">
-              
-              {/* Item 1 */}
-              <div className="flex items-center gap-3.5 py-1">
-                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl shrink-0">
-                  <svg className="w-6 h-6 text-blue-450" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wide">{t('stats_total')}</span>
-                  <strong className="text-2xl font-bold text-blue-400 font-sans block mt-0.5">
-                    {stats.totalResponses.toLocaleString()} <span className="text-xs text-slate-500 font-normal">{t('stats_unit')}</span>
-                  </strong>
-                </div>
-              </div>
-
-              {/* Item 2 */}
-              <div className="flex items-center gap-3.5 py-1 border-t md:border-t-0 md:border-l border-slate-800/80 md:pl-6">
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl shrink-0">
-                  <svg className="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wide">{t('stats_attending')}</span>
-                  <strong className="text-2xl font-bold text-[#3b82f6] font-sans block mt-0.5">
-                    {stats.totalAttending.toLocaleString()} <span className="text-xs text-slate-500 font-normal">{t('stats_unit')}</span>
-                  </strong>
-                </div>
-              </div>
-
-              {/* Item 3 */}
-              <div className="flex items-center justify-between gap-3 py-1 border-t lg:border-t-0 lg:border-l border-slate-800/80 lg:pl-6">
-                <div className="flex items-center gap-3.5">
-                  <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl shrink-0">
-                    <svg className="w-6 h-6 text-blue-450" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                    <CircularProgress percentage={percentD2} strokeColor="stroke-purple-500" />
                   </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wide">{t('stats_d1')}</span>
-                    <strong className="text-xl font-bold text-[#3b82f6] font-sans block mt-0.5">
-                      {stats.bookedCountD1.toLocaleString()} <span className="text-xs text-slate-500 font-normal">/ {CAPACITY.toLocaleString()}</span>
-                    </strong>
-                  </div>
-                </div>
-                <CircularProgress percentage={percentD1} strokeColor="stroke-blue-500" />
-              </div>
 
-              {/* Item 4 */}
-              <div className="flex items-center justify-between gap-3 py-1 border-t lg:border-t-0 lg:border-l border-slate-800/80 lg:pl-6">
-                <div className="flex items-center gap-3.5">
-                  <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-2xl shrink-0">
-                    <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wide">{t('stats_d2')}</span>
-                    <strong className="text-xl font-bold text-[#3b82f6] font-sans block mt-0.5">
-                      {stats.bookedCountD2.toLocaleString()} <span className="text-xs text-slate-500 font-normal">/ {CAPACITY.toLocaleString()}</span>
-                    </strong>
-                  </div>
-                </div>
-                <CircularProgress percentage={percentD2} strokeColor="stroke-purple-500" />
-              </div>
-
-            </div>
-            )}
-
-            {/* SEATING CHART SECTION */}
-            <div id="seating-chart" className="slate-card rounded-3xl p-6 space-y-6 scroll-mt-20">
-              <div className="flex flex-wrap justify-between items-center gap-4">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-3">
-                    <LayoutGrid className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
-                    {t('map_title')}
-                  </h3>
-                  <button
-                    onClick={() => fetchData(apiMode, apiUrl)}
-                    disabled={isRefreshing}
-                    className="p-2 bg-slate-800/85 hover:bg-slate-700/85 border border-slate-700/50 text-slate-300 rounded-xl transition-all flex items-center justify-center cursor-pointer disabled:opacity-50 hover:text-white active:scale-95 shadow-lg backdrop-blur-sm"
-                    title={t('map_btn_refresh')}
-                    aria-label="Refresh data"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                  </button>
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-300">
-                  <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span> {t('map_booked_d1')}</span>
-                  <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#facc15] shadow-[0_0_8px_rgba(250,204,21,0.5)]"></span> {t('map_booked_d2')}</span>
-                  <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-slate-800 border border-slate-600"></span> {t('map_available')}</span>
-                </div>
-              </div>
-
-              {serverError && (
-                <div className="p-3.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-2xl flex items-center gap-2.5 animate-in fade-in duration-200">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{serverError}</span>
                 </div>
               )}
 
-              <SeatingLayoutMap bookedD1Count={stats.bookedCountD1} bookedD2Count={stats.bookedCountD2} />
+              {/* WALL OF LETTERS SECTION */}
+              <div className="flex flex-col space-y-6">
+                {/* Centered Top Header */}
+                <div id="wall-header" className="text-center w-full max-w-xl mx-auto px-4 pointer-events-none z-10">
+                  <h3 className="text-2xl md:text-3xl font-extrabold tracking-widest text-transparent bg-gradient-to-r from-amber-200 via-yellow-100 to-blue-200 bg-clip-text select-none drop-shadow-[0_0_15px_rgba(251,191,36,0.15)] uppercase">
+                    {t('popup_title')}
+                  </h3>
+                  {commentsList.length > 0 && (
+                    <div className="mt-1.5 text-[11px] md:text-xs font-semibold text-amber-200/80 tracking-widest uppercase flex items-center justify-center gap-1.5 select-none">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.8)]"></span>
+                      {commentsList.length.toLocaleString()} {i18n.language === 'th' ? 'ฉบับ' : i18n.language === 'zh' ? '封信件' : 'Letters'}
+                    </div>
+                  )}
+                  {/* Sleek minimalist divider */}
+                  <span className="w-16 h-[1px] bg-gradient-to-r from-transparent via-amber-500/30 to-transparent my-2.5 mx-auto block" />
+                  <p className="text-xs text-slate-400 select-none font-light tracking-wide leading-relaxed">
+                    {i18n.language === 'th' ? 'คลิกที่ข้อความลอยด้านล่างเพื่อเปิดอ่านจดหมายจากใจของแฟนๆ'
+                      : i18n.language === 'zh' ? '点击下方的漂浮文字，阅读粉丝们的心声信件'
+                        : 'Click on the floating messages below to read letters from the fans\' hearts'}
+                  </p>
+                </div>
+
+                {/* Floating Area Below Header */}
+                <div className="relative h-[270px] overflow-hidden">
+                  <FloatingCommentsBackground
+                    comments={commentsList}
+                    onCommentClick={(comment) => {
+                      setSelectedComment(comment);
+                      setIsCommentPopupOpen(true);
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* SEATING CHART SECTION */}
+              <div id="seating-chart" className="slate-card rounded-3xl p-6 space-y-6 scroll-mt-20">
+                <div className="flex flex-wrap justify-between items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-3">
+                      <LayoutGrid className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
+                      {t('map_title')}
+                    </h3>
+                    <button
+                      onClick={() => fetchData(apiMode, apiUrl)}
+                      disabled={isRefreshing}
+                      className="p-2 bg-slate-800/85 hover:bg-slate-700/85 border border-slate-700/50 text-slate-300 rounded-xl transition-all flex items-center justify-center cursor-pointer disabled:opacity-50 hover:text-white active:scale-95 shadow-lg backdrop-blur-sm"
+                      title={t('map_btn_refresh')}
+                      aria-label="Refresh data"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-300">
+                    <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span> {t('map_booked_d1')}</span>
+                    <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#facc15] shadow-[0_0_8px_rgba(250,204,21,0.5)]"></span> {t('map_booked_d2')}</span>
+                    <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-slate-800 border border-slate-600"></span> {t('map_available')}</span>
+                  </div>
+                </div>
+
+                {serverError && (
+                  <div className="p-3.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-2xl flex items-center gap-2.5 animate-in fade-in duration-200">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{serverError}</span>
+                  </div>
+                )}
+
+                <SeatingLayoutMap bookedD1Count={stats.bookedCountD1} bookedD2Count={stats.bookedCountD2} />
+              </div>
+            </>
+          )}
+        </main>
+
+        {/* FOOTER */}
+        <footer className="border-t border-slate-800 bg-slate-950/60 py-8 text-center text-[10px] text-slate-500 font-mono tracking-wider">
+          <div className="max-w-6xl w-full mx-auto px-6 md:px-12">
+            <p className="mb-2 font-sans text-xs text-slate-400">{t('footer')}</p>
+          </div>
+        </footer>
+
+        {/* OVERLAY MODAL FOR SURVEY FORM */}
+        {isSurveyOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+            <div className="slate-card border border-slate-700/80 rounded-3xl w-full max-w-2xl p-8 md:p-10 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+              <button
+                onClick={() => setIsSurveyOpen(false)}
+                className="absolute top-4 right-5 text-slate-400 hover:text-white text-2xl font-bold cursor-pointer transition-colors"
+              >
+                &times;
+              </button>
+              <SurveyFormView
+                apiMode={apiMode}
+                apiUrl={apiUrl}
+                onSuccess={(ticketInfo) => {
+                  setLastTicket(ticketInfo);
+                  setIsSurveyOpen(false);
+                  setIsTicketOpen(true);
+                  fetchData(apiMode, apiUrl);
+                }}
+                onCancel={() => setIsSurveyOpen(false)}
+              />
             </div>
-          </>
+          </div>
         )}
-      </main>
 
-      {/* FOOTER */}
-      <footer className="border-t border-slate-800 bg-slate-950/60 py-8 text-center text-[10px] text-slate-500 font-mono tracking-wider">
-        <div className="max-w-6xl w-full mx-auto px-6 md:px-12">
-          <p className="mb-2 font-sans text-xs text-slate-400">{t('footer')}</p>
-        </div>
-      </footer>
-
-      {/* OVERLAY MODAL FOR SURVEY FORM */}
-      {isSurveyOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="slate-card border border-slate-700/80 rounded-3xl w-full max-w-2xl p-8 md:p-10 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setIsSurveyOpen(false)}
-              className="absolute top-4 right-5 text-slate-400 hover:text-white text-2xl font-bold cursor-pointer transition-colors"
-            >
-              &times;
-            </button>
-            <SurveyFormView
-              apiMode={apiMode}
-              apiUrl={apiUrl}
-              onSuccess={(ticketInfo) => {
-                setLastTicket(ticketInfo);
-                setIsSurveyOpen(false);
-                setIsTicketOpen(true);
-                fetchData(apiMode, apiUrl);
-              }}
-              onCancel={() => setIsSurveyOpen(false)}
-            />
+        {/* OVERLAY MODAL FOR E-TICKET SHOWCASE */}
+        {isTicketOpen && lastTicket && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-200">
+            <div className="slate-card border border-slate-700/80 rounded-3xl w-full max-w-2xl p-6 md:p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
+              <button
+                onClick={() => setIsTicketOpen(false)}
+                className="absolute top-4 right-5 text-slate-400 hover:text-white text-2xl font-bold cursor-pointer transition-colors"
+              >
+                &times;
+              </button>
+              <ETicketView
+                ticket={lastTicket}
+                onClose={() => setIsTicketOpen(false)}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* OVERLAY MODAL FOR E-TICKET SHOWCASE */}
-      {isTicketOpen && lastTicket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="slate-card border border-slate-700/80 rounded-3xl w-full max-w-2xl p-6 md:p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
-            <button
-              onClick={() => setIsTicketOpen(false)}
-              className="absolute top-4 right-5 text-slate-400 hover:text-white text-2xl font-bold cursor-pointer transition-colors"
-            >
-              &times;
-            </button>
-            <ETicketView
-              ticket={lastTicket}
-              onClose={() => setIsTicketOpen(false)}
-            />
-          </div>
-        </div>
-      )}
+        {/* OVERLAY MODAL FOR FULL COMMENT */}
+        <CommentPopup
+          isOpen={isCommentPopupOpen}
+          comment={selectedComment}
+          onClose={() => {
+            setIsCommentPopupOpen(false);
+            setSelectedComment(null);
+          }}
+        />
       </div>
     </div>
   );
@@ -978,13 +1103,13 @@ function SeatingLayoutMap({ bookedD1Count, bookedD2Count, initialDay = "day1", s
 
     // Draw T-Stage
     ctx.fillStyle = "rgba(148, 163, 184, 0.15)";
-    
+
     // Stage Stalk (thinner)
     ctx.fillRect(offsetX + 46 * scale, offsetY, 6 * scale, 18 * scale);
-    
+
     // Main Stage (smaller)
     ctx.fillRect(offsetX + 36 * scale, offsetY + 18 * scale, 26 * scale, 8 * scale);
-    
+
     ctx.fillStyle = "rgba(148, 163, 184, 0.8)";
     ctx.font = `bold ${Math.max(8, scale * 2.5)}px sans-serif`;
     ctx.textAlign = "center";
@@ -999,21 +1124,21 @@ function SeatingLayoutMap({ bookedD1Count, bookedD2Count, initialDay = "day1", s
 
     // Draw Seats
     let currentBookedLeft = bookedCount;
-    
+
     STATIC_SEAT_MAP.forEach((seat) => {
       const isBooked = currentBookedLeft > 0;
       if (isBooked) currentBookedLeft--;
 
       const cx = offsetX + seat.x * scale;
       const cy = offsetY + seat.y * scale;
-      
+
       // Calculate size with a minimal gap (3% of scale) so seats look extremely large and chunky
       const size = scale * 0.97;
 
       ctx.beginPath();
       // Draw a subtle rounded rect for seats instead of circle for a more accurate map look
       ctx.roundRect(cx - size / 2, cy - size / 2, size, size, 2);
-      
+
       if (isBooked) {
         ctx.fillStyle = selectedDay === "day1" ? "#3b82f6" : "#facc15"; // Blue for Day 1, Yellow for Day 2
       } else {
@@ -1044,7 +1169,7 @@ function SeatingLayoutMap({ bookedD1Count, bookedD2Count, initialDay = "day1", s
       const seat = STATIC_SEAT_MAP[i];
       const cx = offsetX + seat.x * scale;
       const cy = offsetY + seat.y * scale;
-      
+
       // Simple AABB bounding box check for hover
       if (
         mouseX >= cx - dotRadius && mouseX <= cx + dotRadius &&
@@ -1072,33 +1197,31 @@ function SeatingLayoutMap({ bookedD1Count, bookedD2Count, initialDay = "day1", s
           <div className="flex gap-3">
             <button
               onClick={() => setSelectedDay("day1")}
-              className={`px-5 py-2 rounded-xl text-sm font-bold transition-all border ${
-                selectedDay === "day1"
+              className={`px-5 py-2 rounded-xl text-sm font-bold transition-all border ${selectedDay === "day1"
                   ? "bg-blue-500/20 text-blue-400 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.3)]"
                   : "bg-slate-900 border-slate-800 text-slate-500 hover:text-blue-300 hover:border-blue-900/50 hover:bg-slate-800"
-              }`}
+                }`}
             >
               {t('map_btn_d1')}
             </button>
             <button
               onClick={() => setSelectedDay("day2")}
-              className={`px-5 py-2 rounded-xl text-sm font-bold transition-all border ${
-                selectedDay === "day2"
+              className={`px-5 py-2 rounded-xl text-sm font-bold transition-all border ${selectedDay === "day2"
                   ? "bg-amber-500/20 text-[#facc15] border-amber-500/50 shadow-[0_0_15px_rgba(250,204,21,0.3)]"
                   : "bg-slate-900 border-slate-800 text-slate-500 hover:text-amber-300 hover:border-amber-900/50 hover:bg-slate-800"
-              }`}
+                }`}
             >
               {t('map_btn_d2')}
             </button>
           </div>
         )}
-        
+
         {(!showSelector && !hoveredSeat) ? null : (
           <div className={`text-xs text-slate-400 font-medium flex flex-wrap items-center bg-slate-950/80 px-4 py-2 border border-slate-850 rounded-xl min-w-[200px] justify-center ${!showSelector ? 'w-full sm:w-auto' : ''}`}>
             {hoveredSeat ? (
               <span className="flex items-center gap-2">
                 <span className={`w-3 h-3 rounded-full ${hoveredSeat.status === 'BOOKED' ? (selectedDay === 'day1' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]' : 'bg-[#facc15] shadow-[0_0_8px_rgba(250,204,21,0.8)]') : 'bg-slate-600'}`}></span>
-                <strong className="text-sm">{t('map_zone')} {hoveredSeat.zone}</strong> <span className="mx-1 text-slate-600">|</span> 
+                <strong className="text-sm">{t('map_zone')} {hoveredSeat.zone}</strong> <span className="mx-1 text-slate-600">|</span>
                 <span className="text-slate-300">{t('map_zone_total')} {hoveredSeat.zoneTotal} {t('map_seat_unit')}</span>
               </span>
             ) : (
@@ -1124,20 +1247,18 @@ function SeatingLayoutMap({ bookedD1Count, bookedD2Count, initialDay = "day1", s
           <div className="flex justify-between items-end mb-3">
             <span className="text-sm font-bold text-slate-300">{t('map_progress')}</span>
             <div className="text-right">
-              <span className={`text-4xl font-black text-transparent bg-clip-text drop-shadow-sm ${
-                selectedDay === "day1" ? "bg-gradient-to-r from-blue-400 to-emerald-400" : "bg-gradient-to-r from-[#facc15] to-orange-400"
-              }`}>
+              <span className={`text-4xl font-black text-transparent bg-clip-text drop-shadow-sm ${selectedDay === "day1" ? "bg-gradient-to-r from-blue-400 to-emerald-400" : "bg-gradient-to-r from-[#facc15] to-orange-400"
+                }`}>
                 {bookedPercent}%
               </span>
             </div>
           </div>
           <div className="w-full bg-slate-950/80 rounded-full h-5 border border-slate-800/80 overflow-hidden relative shadow-inner">
-            <div 
-              className={`h-full rounded-full transition-all duration-1000 ease-out relative ${
-                selectedDay === "day1" 
-                  ? "bg-gradient-to-r from-blue-600 via-blue-500 to-emerald-400 shadow-[0_0_15px_rgba(59,130,246,0.5)]" 
+            <div
+              className={`h-full rounded-full transition-all duration-1000 ease-out relative ${selectedDay === "day1"
+                  ? "bg-gradient-to-r from-blue-600 via-blue-500 to-emerald-400 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
                   : "bg-gradient-to-r from-amber-600 via-[#facc15] to-orange-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]"
-              }`}
+                }`}
               style={{ width: `${Math.min(100, Math.max(0, (bookedCount / CAPACITY) * 100))}%` }}
             >
               <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9InAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgNDBMMDAgMEw0MCAwTDQwIDQweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0wIDQwbDQwLTQwIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIgc3Ryb2tlLXdpZHRoPSI0Ii8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI3ApIi8+PC9zdmc+')] opacity-40 mix-blend-overlay" />
@@ -1195,7 +1316,7 @@ function SurveyFormView({
       setErrorMsg("โปรดใช้อีเมลมาตรฐานที่มีอยู่จริงเพื่อประเมินรายงานสรุป");
       return false;
     }
-    
+
     // Check local duplicate in mock mode
     if (apiMode === "mock") {
       const localResponses = JSON.parse(localStorage.getItem(LSTORAGE_KEY_RESPONSES) || "[]") as ResponseData[];
@@ -1349,14 +1470,14 @@ function SurveyFormView({
           name,
           willAttend: attendingMapping[attending] || attending,
           origin: origin === "Bangkok" ? "กรุงเทพมหานคร / Bangkok"
-                : origin === "Bangkok Metropolitan" ? "ปริมณฑล / Bangkok Metropolitan Area"
-                : origin === "Northern" ? "ภาคเหนือ / Northern Thailand"
+            : origin === "Bangkok Metropolitan" ? "ปริมณฑล / Bangkok Metropolitan Area"
+              : origin === "Northern" ? "ภาคเหนือ / Northern Thailand"
                 : origin === "Central" ? "ภาคกลาง / Central Thailand"
-                : origin === "Eastern" ? "ภาคตะวันออก / Eastern Thailand"
-                : origin === "Northeastern" ? "ภาคตะวันออกเฉียงเหนือ / Northeastern Thailand"
-                : origin === "Southern" ? "ภาคใต้ / Southern Thailand"
-                : origin === "Western" ? "ภาคตะวันตก / Western Thailand"
-                : origin,
+                  : origin === "Eastern" ? "ภาคตะวันออก / Eastern Thailand"
+                    : origin === "Northeastern" ? "ภาคตะวันออกเฉียงเหนือ / Northeastern Thailand"
+                      : origin === "Southern" ? "ภาคใต้ / Southern Thailand"
+                        : origin === "Western" ? "ภาคตะวันตก / Western Thailand"
+                          : origin,
           attendDays: dayMapping[dayPreference] || dayPreference,
           priceD1: (dayPreference === "1 Day" || dayPreference === "2 Days") ? priceDay1 : "",
           priceD2: (dayPreference === "2 Days") ? priceDay2 : "",
@@ -1396,7 +1517,7 @@ function SurveyFormView({
 
   return (
     <div className="space-y-6">
-      
+
       {/* Header Indicators */}
       <div className="border-b border-slate-800 pb-4">
         <div>
@@ -1433,7 +1554,7 @@ function SurveyFormView({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        
+
         {/* STEP 1 */}
         {step === 1 && (
           <div className="space-y-4">
@@ -1618,7 +1739,7 @@ function SurveyFormView({
               >
                 <ChevronLeft className="w-4 h-4" /> {t('survey_btn_back')}
               </button>
-              
+
               <button
                 type="submit"
                 disabled={loading}
@@ -1683,7 +1804,7 @@ function ETicketView({
   };
 
   const ticketsToShow: { id: string; images: { front: string; back: string }; label: string }[] = [];
-  
+
   if (isBoth) {
     ticketsToShow.push({ id: 'day1', images: getTicketImagesForTier(tierD1), label: 'DAY 1' });
     ticketsToShow.push({ id: 'day2', images: getTicketImagesForTier(tierD2), label: 'DAY 2' });
@@ -1737,7 +1858,7 @@ function ETicketView({
 
   return (
     <div className="space-y-5">
-      
+
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-3">
         <div className="flex items-center gap-2.5">
@@ -1761,12 +1882,12 @@ function ETicketView({
               {ticketsToShow.length > 1 && (
                 <span className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">{tItem.label}</span>
               )}
-              <div 
+              <div
                 onClick={() => toggleFlip(tItem.id)}
                 className="w-full cursor-pointer select-none"
                 style={{ perspective: "1200px" }}
               >
-                <div 
+                <div
                   className="relative w-full duration-700 transition-transform"
                   style={{
                     transformStyle: "preserve-3d",
@@ -1774,11 +1895,11 @@ function ETicketView({
                   }}
                 >
                   {/* FRONT */}
-                  <div 
+                  <div
                     className="w-full rounded-2xl overflow-hidden shadow-2xl shadow-black/40"
                     style={{ backfaceVisibility: "hidden" }}
                   >
-                    <img 
+                    <img
                       src={tItem.images.front}
                       className="w-full h-auto block"
                       alt={`${tItem.label} Front`}
@@ -1787,11 +1908,11 @@ function ETicketView({
                   </div>
 
                   {/* BACK */}
-                  <div 
+                  <div
                     className="w-full rounded-2xl overflow-hidden shadow-2xl shadow-black/40 absolute top-0 left-0"
                     style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
                   >
-                    <img 
+                    <img
                       src={tItem.images.back}
                       className="w-full h-auto block"
                       alt={`${tItem.label} Back`}
@@ -1941,17 +2062,17 @@ function AdminDashboardView({
 
   const filteredResponses = useMemo(() => {
     if (!stats.allResponses) return [];
-    
+
     // 1. Apply filters
     let result = stats.allResponses.filter(r => {
       // Search
       const search = respSearch.toLowerCase();
-      const matchesSearch = !search || 
+      const matchesSearch = !search ||
         String(r.name || "").toLowerCase().includes(search) ||
         String(r.email || "").toLowerCase().includes(search) ||
         String(r.comments || "").toLowerCase().includes(search) ||
         String(r.origin || "").toLowerCase().includes(search);
-        
+
       // Attending Filter
       let matchesAttending = true;
       if (filterAttending !== "all") {
@@ -1963,10 +2084,10 @@ function AdminDashboardView({
           matchesAttending = r.willAttend.includes("Undecided") || r.willAttend.includes("ยังไม่แน่ใจ");
         }
       }
-      
+
       // Origin Filter
       const matchesOrigin = filterOrigin === "all" || normalizeOrigin(r.origin) === filterOrigin;
-      
+
       // Days Filter
       let matchesDays = true;
       if (filterDays !== "all") {
@@ -1980,20 +2101,20 @@ function AdminDashboardView({
           matchesDays = r.attendDays.includes("Undecided") || r.attendDays.includes("ยังไม่ตัดสินใจ");
         }
       }
-      
+
       // Price Filter
       const matchesPrice = filterPrice === "all" || r.priceD1 === filterPrice || r.priceD2 === filterPrice;
-      
+
       // Comment Filter
       let matchesComment = true;
       if (filterHasComment !== "all") {
         const hasComment = !!(r.comments && r.comments !== "-" && r.comments.trim() !== "");
         matchesComment = filterHasComment === "yes" ? hasComment : !hasComment;
       }
-      
+
       return matchesSearch && matchesAttending && matchesOrigin && matchesDays && matchesPrice && matchesComment;
     });
-    
+
     // 2. Apply sorting
     result = [...result];
     if (sortBy === "newest") {
@@ -2005,7 +2126,7 @@ function AdminDashboardView({
     } else if (sortBy === "name-desc") {
       result.sort((a, b) => String(b.name || "").localeCompare(String(a.name || ""), "th"));
     }
-    
+
     return result;
   }, [stats.allResponses, respSearch, filterAttending, filterOrigin, filterDays, filterPrice, filterHasComment, sortBy]);
 
@@ -2041,7 +2162,7 @@ function AdminDashboardView({
       const will = String(r.willAttend || "");
       return will.includes("Definitely") || will.includes("ไปแน่นอน") || will.includes("Probably") || will.includes("มีโอกาสไป");
     }).length;
-    
+
     const attendingPercent = total > 0 ? (attending / total) * 100 : 0;
 
     const undecided = dayResponses.filter(r => {
@@ -2205,12 +2326,12 @@ function AdminDashboardView({
     const list = Object.entries(counts).map(([name, value]) => ({
       name: name.includes("Metropolitan") || name.includes("ปริมณฑล") ? "ปริมณฑล"
         : name.includes("Bangkok") || name.includes("กรุงเทพ") ? "กรุงเทพมหานคร"
-        : name.includes("Northeastern") || name.includes("ภาคตะวันออกเฉียงเหนือ") ? "ภาคตะวันออกเฉียงเหนือ"
-        : name.includes("Northern") || name.includes("ภาคเหนือ") ? "ภาคเหนือ"
-        : name.includes("Central") || name.includes("ภาคกลาง") ? "ภาคกลาง"
-        : name.includes("Eastern") || name.includes("ภาคตะวันออก") ? "ภาคตะวันออก"
-        : name.includes("Southern") || name.includes("ภาคใต้") ? "ภาคใต้"
-        : name.includes("Western") || name.includes("ภาคตะวันตก") ? "ภาคตะวันตก" : "ต่างประเทศ",
+          : name.includes("Northeastern") || name.includes("ภาคตะวันออกเฉียงเหนือ") ? "ภาคตะวันออกเฉียงเหนือ"
+            : name.includes("Northern") || name.includes("ภาคเหนือ") ? "ภาคเหนือ"
+              : name.includes("Central") || name.includes("ภาคกลาง") ? "ภาคกลาง"
+                : name.includes("Eastern") || name.includes("ภาคตะวันออก") ? "ภาคตะวันออก"
+                  : name.includes("Southern") || name.includes("ภาคใต้") ? "ภาคใต้"
+                    : name.includes("Western") || name.includes("ภาคตะวันตก") ? "ภาคตะวันตก" : "ต่างประเทศ",
       value
     })).sort((a, b) => b.value - a.value);
 
@@ -2235,7 +2356,7 @@ function AdminDashboardView({
     stats.allResponses.forEach(r => {
       const will = String(r.willAttend || "");
       const days = String(r.attendDays || "");
-      
+
       const isDef = will.includes("Definitely") || will.includes("ไปแน่นอน");
       const isProb = will.includes("Probably") || will.includes("มีโอกาสไป");
       const isUnd = will.includes("Undecided") || will.includes("ยังไม่แน่ใจ") || will.includes("Not sure");
@@ -2335,12 +2456,12 @@ function AdminDashboardView({
     const list = Object.entries(counts).map(([name, value]) => ({
       name: name.includes("Metropolitan") || name.includes("ปริมณฑล") ? "ปริมณฑล"
         : name.includes("Bangkok") || name.includes("กรุงเทพ") ? "กรุงเทพมหานคร"
-        : name.includes("Northeastern") || name.includes("ภาคตะวันออกเฉียงเหนือ") ? "ภาคตะวันออกเฉียงเหนือ"
-        : name.includes("Northern") || name.includes("ภาคเหนือ") ? "ภาคเหนือ"
-        : name.includes("Central") || name.includes("ภาคกลาง") ? "ภาคกลาง"
-        : name.includes("Eastern") || name.includes("ภาคตะวันออก") ? "ภาคตะวันออก"
-        : name.includes("Southern") || name.includes("ภาคใต้") ? "ภาคใต้"
-        : name.includes("Western") || name.includes("ภาคตะวันตก") ? "ภาคตะวันตก" : "ต่างประเทศ",
+          : name.includes("Northeastern") || name.includes("ภาคตะวันออกเฉียงเหนือ") ? "ภาคตะวันออกเฉียงเหนือ"
+            : name.includes("Northern") || name.includes("ภาคเหนือ") ? "ภาคเหนือ"
+              : name.includes("Central") || name.includes("ภาคกลาง") ? "ภาคกลาง"
+                : name.includes("Eastern") || name.includes("ภาคตะวันออก") ? "ภาคตะวันออก"
+                  : name.includes("Southern") || name.includes("ภาคใต้") ? "ภาคใต้"
+                    : name.includes("Western") || name.includes("ภาคตะวันตก") ? "ภาคตะวันตก" : "ต่างประเทศ",
       value
     })).sort((a, b) => b.value - a.value);
 
@@ -2389,18 +2510,17 @@ function AdminDashboardView({
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-[#050b14] text-white font-sans animate-in fade-in duration-300">
-      
+
       {/* MOBILE BACKDROP */}
       {isMobileSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden animate-in fade-in duration-200"
           onClick={() => setIsMobileSidebarOpen(false)}
         />
       )}
 
-      <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-[#0a111d] border-r border-[#1c2536] p-4 flex flex-col shrink-0 transition-transform duration-300 ease-in-out md:translate-x-0 md:relative md:w-[240px] md:h-screen md:sticky md:top-0 overflow-y-auto ${
-        isMobileSidebarOpen ? 'translate-x-0 shadow-2xl shadow-black/80' : '-translate-x-full'
-      }`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-[#0a111d] border-r border-[#1c2536] p-4 flex flex-col shrink-0 transition-transform duration-300 ease-in-out md:translate-x-0 md:relative md:w-[240px] md:h-screen md:sticky md:top-0 overflow-y-auto ${isMobileSidebarOpen ? 'translate-x-0 shadow-2xl shadow-black/80' : '-translate-x-full'
+        }`}>
         <div className="flex items-center justify-between mb-8 px-2 mt-2">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-black text-xs text-white shadow-lg">NF</div>
@@ -2409,7 +2529,7 @@ function AdminDashboardView({
               <h2 className="text-[#facc15] font-black text-[10px] tracking-widest mt-0.5">FANCON</h2>
             </div>
           </div>
-          <button 
+          <button
             onClick={() => setIsMobileSidebarOpen(false)}
             className="md:hidden p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
@@ -2420,14 +2540,14 @@ function AdminDashboardView({
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('overview'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${activeTab === 'overview' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}>
             <LayoutGrid className="w-4 h-4" /> ภาพรวม
           </a>
-          
+
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('responses'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'responses' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ผู้ตอบแบบสำรวจ</a>
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('feedbacks'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'feedbacks' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ความคิดเห็น & ข้อเสนอแนะ</a>
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('seating'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'seating' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><LayoutGrid className="w-4 h-4" /> สรุปข้อมูลผังที่นั่ง</a>
-          
+
           <div className="pt-5 pb-2 px-3 text-[9px] font-bold uppercase tracking-wider text-slate-600">ตั้งค่า</div>
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('settings'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><Lock className="w-4 h-4" /> ตั้งค่าระบบ</a>
-          
+
           <div className="mt-4 pt-4 border-t border-[#1c2536] flex items-center justify-between px-3 gap-2">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shrink-0">
@@ -2438,7 +2558,7 @@ function AdminDashboardView({
                 <p className="text-[9px] text-slate-500 mt-0.5">ผู้ดูแลระบบ</p>
               </div>
             </div>
-            
+
             <button
               onClick={handleLogout}
               className="p-1.5 hover:bg-rose-500/15 text-slate-500 hover:text-rose-400 rounded-lg transition-all cursor-pointer border border-transparent hover:border-rose-500/20"
@@ -2473,1066 +2593,1623 @@ function AdminDashboardView({
 
         {/* MAIN CONTENT */}
         <main className="flex-1 p-4 md:p-8 overflow-y-auto space-y-6">
-        
-        {/* HEADER CONTROLS */}
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-white tracking-wide">
-              ภาพรวม
-            </h2>
-            <p className="text-xs text-slate-400 mt-1">สรุปข้อมูลทั้งหมดของแบบสำรวจ</p>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 bg-[#121b29] border border-[#1e293b] rounded-lg text-[10px] font-medium text-slate-400">
-              <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
-              อัปเดตล่าสุด: {new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
-            </div>
-            <button
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              className="px-4 py-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 text-[11px] font-bold rounded-lg hover:bg-blue-600/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} /> รีเฟรชข้อมูล
-            </button>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-[#121b29] border border-[#1e293b] text-slate-300 text-[11px] font-bold rounded-lg hover:bg-[#1e293b] transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" /> กลับ
-            </button>
-          </div>
-        </div>
-
-        {serverError && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-2xl flex items-start gap-3 animate-in fade-in duration-200">
-            <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
+          {/* HEADER CONTROLS */}
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <strong className="font-bold block mb-1">เกิดข้อผิดพลาดในการโหลดข้อมูล:</strong>
-              <p className="leading-relaxed">{serverError}</p>
+              <h2 className="text-xl font-bold text-white tracking-wide">
+                ภาพรวม
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">สรุปข้อมูลทั้งหมดของแบบสำรวจ</p>
             </div>
-          </div>
-        )}
 
-      {/* KPI READOUTS */}
-      {activeTab === 'overview' && (
-      <div id="overview" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 scroll-mt-20">
-        {/* Card 1: Blue */}
-        <div className="bg-[#0b1b36] border border-[#1e3a8a] rounded-2xl p-5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-          <div className="flex items-center gap-2 mb-3 relative z-10">
-            <div className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg"><MessageSquare className="w-3.5 h-3.5" /></div>
-            <span className="text-xs text-slate-300 font-bold">ผู้ตอบแบบสำรวจทั้งหมด</span>
-          </div>
-          <div className="relative z-10">
-            <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-              <strong className="text-3xl font-black text-blue-400 tracking-tight">{stats.totalResponses.toLocaleString()}</strong>
-              <span className="text-xs text-slate-400 font-medium">คน</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Green */}
-        <div className="bg-[#06261a] border border-[#065f46] rounded-2xl p-5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-          <div className="flex items-center gap-2 mb-3 relative z-10">
-            <div className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg"><CheckCircle2 className="w-3.5 h-3.5" /></div>
-            <span className="text-xs text-slate-300 font-bold">ผู้มีแผนเข้าร่วมงาน</span>
-          </div>
-          <div className="relative z-10">
-            <div className="flex items-baseline gap-1.5 flex-wrap">
-              <strong className="text-3xl font-black text-emerald-400 tracking-tight">{stats.totalAttending.toLocaleString()}</strong>
-              <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
-                คน <span className="text-emerald-500 ml-1">({stats.totalResponses > 0 ? ((stats.totalAttending / stats.totalResponses) * 100).toFixed(2) : 0}%)</span>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Orange (Undecided) */}
-        <div className="bg-[#241a15] border border-[#78350f] rounded-2xl p-5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-          <div className="flex items-center gap-2 mb-3 relative z-10">
-            <div className="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg"><HelpCircle className="w-3.5 h-3.5" /></div>
-            <span className="text-xs text-slate-300 font-bold">ผู้ยังไม่แน่ใจ</span>
-          </div>
-          <div className="relative z-10">
-            <div className="flex items-baseline gap-1.5 mb-2">
-              <strong className="text-3xl font-black text-orange-400 tracking-tight">{(stats.planCounts?.["Not sure yet"] || 0).toLocaleString()}</strong>
-              <span className="text-xs text-slate-400 font-medium">คน</span>
-            </div>
-            <div className="space-y-1 text-[11px] text-slate-400 border-t border-orange-500/10 pt-2 mt-1">
-              <div className="flex justify-between items-center whitespace-nowrap">
-                <span>DAY 1:</span>
-                <span className="text-orange-300 font-bold">{(stats.undecidedCountD1 || 0).toLocaleString()} คน</span>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-2 bg-[#121b29] border border-[#1e293b] rounded-lg text-[10px] font-medium text-slate-400">
+                <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+                อัปเดตล่าสุด: {new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
               </div>
-              <div className="flex justify-between items-center whitespace-nowrap">
-                <span>DAY 2:</span>
-                <span className="text-orange-300 font-bold">{(stats.undecidedCountD2 || 0).toLocaleString()} คน</span>
+              <button
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                className="px-4 py-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 text-[11px] font-bold rounded-lg hover:bg-blue-600/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} /> รีเฟรชข้อมูล
+              </button>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-[#121b29] border border-[#1e293b] text-slate-300 text-[11px] font-bold rounded-lg hover:bg-[#1e293b] transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" /> กลับ
+              </button>
+            </div>
+          </div>
+
+          {serverError && (
+            <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-2xl flex items-start gap-3 animate-in fade-in duration-200">
+              <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
+              <div>
+                <strong className="font-bold block mb-1">เกิดข้อผิดพลาดในการโหลดข้อมูล:</strong>
+                <p className="leading-relaxed">{serverError}</p>
               </div>
-              {stats.undecidedCountNone && stats.undecidedCountNone > 0 ? (
-                <div className="flex justify-between items-center whitespace-nowrap">
-                  <span>ยังไม่เลือกวัน:</span>
-                  <span className="text-slate-300 font-bold">{stats.undecidedCountNone.toLocaleString()} คน</span>
+            </div>
+          )}
+
+          {/* KPI READOUTS */}
+          {activeTab === 'overview' && (
+            <div id="overview" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 scroll-mt-20">
+              {/* Card 1: Blue */}
+              <div className="bg-[#0b1b36] border border-[#1e3a8a] rounded-2xl p-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+                <div className="flex items-center gap-2 mb-3 relative z-10">
+                  <div className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg"><MessageSquare className="w-3.5 h-3.5" /></div>
+                  <span className="text-xs text-slate-300 font-bold">ผู้ตอบแบบสำรวจทั้งหมด</span>
                 </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Purple */}
-        <div className="bg-[#1e1335] border border-[#4c1d95] rounded-2xl p-5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-          <div className="flex items-center gap-2 mb-3 relative z-10">
-            <div className="p-1.5 bg-purple-500/20 text-purple-400 rounded-lg"><LayoutGrid className="w-3.5 h-3.5" /></div>
-            <span className="text-xs text-slate-300 font-bold">ที่นั่งถูกจองแล้ว DAY 1</span>
-          </div>
-          <div className="relative z-10">
-            <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-              <strong className="text-3xl font-black text-purple-400 tracking-tight">{stats.bookedCountD1.toLocaleString()}</strong>
-              <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()} ที่นั่ง</span>
-            </div>
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-purple-500/10 text-[11px] whitespace-nowrap">
-              <span className="text-purple-400 font-bold">{((stats.bookedCountD1 / CAPACITY) * 100).toFixed(2)}%</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Yellow */}
-        <div className="bg-[#2a1d0d] border border-[#92400e] rounded-2xl p-5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-          <div className="flex items-center gap-2 mb-3 relative z-10">
-            <div className="p-1.5 bg-amber-500/20 text-amber-400 rounded-lg"><LayoutGrid className="w-3.5 h-3.5" /></div>
-            <span className="text-xs text-slate-300 font-bold">ที่นั่งถูกจองแล้ว DAY 2</span>
-          </div>
-          <div className="relative z-10">
-            <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-              <strong className="text-3xl font-black text-amber-400 tracking-tight">{stats.bookedCountD2.toLocaleString()}</strong>
-              <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()} ที่นั่ง</span>
-            </div>
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-amber-500/10 text-[11px] whitespace-nowrap">
-              <span className="text-amber-400 font-bold">{((stats.bookedCountD2 / CAPACITY) * 100).toFixed(2)}%</span>
-            </div>
-          </div>
-        </div>
-        </div>
-      )}
-
-      {/* CHARTS GRID */}
-      {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          
-          {/* Card 1: แผนการเข้าร่วมงาน */}
-          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-            <h3 className="text-[13px] font-bold text-white relative z-10">
-              แผนการเข้าร่วมงาน
-            </h3>
-            <div className="h-[180px] w-full mt-2 relative z-10">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  layout="vertical"
-                  data={planChartData}
-                  margin={{ top: 0, right: 30, left: -10, bottom: 0 }}
-                >
-                  <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 500 }} width={75} />
-                  <ChartTooltip
-                    cursor={{ fill: '#1e293b', opacity: 0.4 }}
-                    contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px" }}
-                    itemStyle={{ color: "#f8fafc", fontSize: '11px', fontWeight: 'bold' }}
-                  />
-                  <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={16}>
-                    {planChartData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#8b5cf6', '#64748b'][index % 4]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            
-            {/* Breakdown Table */}
-            <div className="mt-4 border-t border-[#1e293b] pt-4 text-[10px] font-sans text-slate-300 relative z-10">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="text-slate-400 font-bold border-b border-[#1e293b]/50">
-                    <th className="pb-2">แผนการเข้าร่วม</th>
-                    <th className="pb-2 text-right">รวมทั้ง 2 วัน</th>
-                    <th className="pb-2 text-right text-blue-400">DAY 1</th>
-                    <th className="pb-2 text-right text-amber-400">DAY 2</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#1e293b]/30">
-                  <tr className="hover:bg-white/[0.02]">
-                    <td className="py-2 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span> ไปแน่นอน
-                    </td>
-                    <td className="py-2 text-right font-bold text-white">{attendingPlanBreakdown.combined.definitely.toLocaleString()} คน</td>
-                    <td className="py-2 text-right text-blue-300">{attendingPlanBreakdown.day1.definitely.toLocaleString()} คน</td>
-                    <td className="py-2 text-right text-amber-300">{attendingPlanBreakdown.day2.definitely.toLocaleString()} คน</td>
-                  </tr>
-                  <tr className="hover:bg-white/[0.02]">
-                    <td className="py-2 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span> มีโอกาสไป
-                    </td>
-                    <td className="py-2 text-right font-bold text-white">{attendingPlanBreakdown.combined.probably.toLocaleString()} คน</td>
-                    <td className="py-2 text-right text-blue-300">{attendingPlanBreakdown.day1.probably.toLocaleString()} คน</td>
-                    <td className="py-2 text-right text-amber-300">{attendingPlanBreakdown.day2.probably.toLocaleString()} คน</td>
-                  </tr>
-                  <tr className="hover:bg-white/[0.02]">
-                    <td className="py-2 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span> ยังไม่แน่ใจ
-                    </td>
-                    <td className="py-2 text-right font-bold text-white">{attendingPlanBreakdown.combined.undecided.toLocaleString()} คน</td>
-                    <td className="py-2 text-right text-blue-300">{attendingPlanBreakdown.day1.undecided.toLocaleString()} คน</td>
-                    <td className="py-2 text-right text-amber-300">{attendingPlanBreakdown.day2.undecided.toLocaleString()} คน</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Card 2: สัดส่วนแหล่งที่มาของผู้เข้าร่วม */}
-          <div id="demographics" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden scroll-mt-20">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-            
-            <div className="flex items-center justify-between gap-2 relative z-10 border-b border-[#1e293b]/40 pb-2">
-              <h3 className="text-[13px] font-bold text-white">
-                สัดส่วนแหล่งที่มาของผู้เข้าร่วม
-              </h3>
-              
-              {/* Day filter for demographics */}
-              <div className="flex bg-slate-950 p-0.5 rounded-lg border border-[#1e293b] gap-0.5 shrink-0">
-                <button
-                  onClick={() => setDemographicsDay("all")}
-                  className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
-                    demographicsDay === "all"
-                      ? "bg-blue-500/25 text-blue-400 border border-blue-500/20"
-                      : "text-slate-500 hover:text-slate-300 border border-transparent"
-                  }`}
-                >
-                  ทั้งหมด
-                </button>
-                <button
-                  onClick={() => setDemographicsDay("day1")}
-                  className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
-                    demographicsDay === "day1"
-                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/15"
-                      : "text-slate-500 hover:text-slate-300 border border-transparent"
-                  }`}
-                >
-                  DAY 1
-                </button>
-                <button
-                  onClick={() => setDemographicsDay("day2")}
-                  className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
-                    demographicsDay === "day2"
-                      ? "bg-amber-500/20 text-amber-400 border border-amber-500/15"
-                      : "text-slate-500 hover:text-slate-300 border border-transparent"
-                  }`}
-                >
-                  DAY 2
-                </button>
-              </div>
-            </div>
-
-            <div className="h-[180px] w-full flex items-center justify-center relative z-10">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={regionChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={75}
-                    stroke="none"
-                    dataKey="value"
-                  >
-                    {regionChartData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip
-                    contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
-                    itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            {/* Legend */}
-            <div className="grid grid-cols-2 gap-x-2 gap-y-2 mt-2 relative z-10 text-[10px]">
-              {regionChartData.slice(0, 6).map((entry, index) => {
-                const total = regionChartData.reduce((acc, curr) => acc + curr.value, 0);
-                return (
-                  <div key={index} className="flex items-center gap-1.5 text-slate-300">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                    <span className="truncate">{entry.name}</span>
-                    <span className="ml-auto font-bold text-white">{(total > 0 ? (entry.value / total * 100) : 0).toFixed(1)}%</span>
+                <div className="relative z-10">
+                  <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                    <strong className="text-3xl font-black text-blue-400 tracking-tight">{stats.totalResponses.toLocaleString()}</strong>
+                    <span className="text-xs text-slate-400 font-medium">คน</span>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Card 3: ราคาบัตรที่สนใจ */}
-          <div id="prices" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden scroll-mt-20">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-            
-            <div className="flex items-center justify-between gap-2 relative z-10 border-b border-[#1e293b]/40 pb-2">
-              <h3 className="text-[13px] font-bold text-white">
-                ราคาบัตรที่สนใจ
-              </h3>
-              
-              {/* Day filter for prices */}
-              <div className="flex bg-slate-950 p-0.5 rounded-lg border border-[#1e293b] gap-0.5 shrink-0">
-                <button
-                  onClick={() => setPriceFilterDays("1day")}
-                  className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
-                    priceFilterDays === "1day"
-                      ? "bg-blue-500/25 text-blue-400 border border-blue-500/20"
-                      : "text-slate-500 hover:text-slate-300 border border-transparent"
-                  }`}
-                >
-                  1 วัน
-                </button>
-                <button
-                  onClick={() => setPriceFilterDays("2days")}
-                  className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
-                    priceFilterDays === "2days"
-                      ? "bg-amber-500/20 text-amber-400 border border-amber-500/15"
-                      : "text-slate-500 hover:text-slate-300 border border-transparent"
-                  }`}
-                >
-                  2 วัน
-                </button>
+                </div>
               </div>
-            </div>
 
-            <div className="h-[180px] w-full flex items-center justify-center relative z-10">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={priceFilterDays === "1day" ? priceD1ChartData : priceD2ChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={75}
-                    stroke="none"
-                    dataKey="value"
-                  >
-                    {(priceFilterDays === "1day" ? priceD1ChartData : priceD2ChartData).map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip
-                    contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
-                    itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            {/* Legend */}
-            <div className="grid grid-cols-1 gap-y-2 mt-2 relative z-10 text-[10px]">
-              {(priceFilterDays === "1day" ? priceD1ChartData : priceD2ChartData).slice(0, 5).map((entry, index) => {
-                const total = priceFilterDays === "1day" ? stats.bookedCountD1 : stats.bookedCountD2;
-                return (
-                  <div key={index} className="flex items-center gap-1.5 text-slate-300">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                    <span>{entry.name}</span>
-                    <span className="ml-auto font-bold text-white">
-                      {entry.value.toLocaleString()} คน ({(total > 0 ? (entry.value / total * 100) : 0).toFixed(1)}%)
+              {/* Card 2: Green */}
+              <div className="bg-[#06261a] border border-[#065f46] rounded-2xl p-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+                <div className="flex items-center gap-2 mb-3 relative z-10">
+                  <div className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg"><CheckCircle2 className="w-3.5 h-3.5" /></div>
+                  <span className="text-xs text-slate-300 font-bold">ผู้มีแผนเข้าร่วมงาน</span>
+                </div>
+                <div className="relative z-10">
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <strong className="text-3xl font-black text-emerald-400 tracking-tight">{stats.totalAttending.toLocaleString()}</strong>
+                    <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                      คน <span className="text-emerald-500 ml-1">({stats.totalResponses > 0 ? ((stats.totalAttending / stats.totalResponses) * 100).toFixed(2) : 0}%)</span>
                     </span>
                   </div>
-                );
-              })}
-            </div>
-          </div>
+                </div>
+              </div>
 
-          {/* Card 4: การเข้าร่วมงาน 2 วัน */}
-          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-            <h3 className="text-[13px] font-bold text-white relative z-10">
-              การเข้าร่วมงาน 2 วัน
-            </h3>
-            <div className="h-[180px] w-full flex items-center justify-center relative z-10">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={attendingDaysChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={75}
-                    stroke="none"
-                    dataKey="value"
-                  >
-                    {attendingDaysChartData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip
-                    contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
-                    itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            {/* Legend */}
-            <div className="grid grid-cols-1 gap-y-2 mt-2 relative z-10 text-[10px]">
-              {attendingDaysChartData.map((entry, index) => {
-                const total = attendingDaysChartData.reduce((acc, curr) => acc + curr.value, 0);
-                return (
-                  <div key={index} className="flex items-center gap-1.5 text-slate-300">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[(index + 3) % COLORS.length] }}></span>
-                    <span>{entry.name}</span>
-                    <span className="ml-auto font-bold text-white">{entry.value.toLocaleString()} คน ({(total > 0 ? (entry.value / total * 100) : 0).toFixed(1)}%)</span>
+              {/* Card 3: Orange (Undecided) */}
+              <div className="bg-[#241a15] border border-[#78350f] rounded-2xl p-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+                <div className="flex items-center gap-2 mb-3 relative z-10">
+                  <div className="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg"><HelpCircle className="w-3.5 h-3.5" /></div>
+                  <span className="text-xs text-slate-300 font-bold">ผู้ยังไม่แน่ใจ</span>
+                </div>
+                <div className="relative z-10">
+                  <div className="flex items-baseline gap-1.5 mb-2">
+                    <strong className="text-3xl font-black text-orange-400 tracking-tight">{(stats.planCounts?.["Not sure yet"] || 0).toLocaleString()}</strong>
+                    <span className="text-xs text-slate-400 font-medium">คน</span>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Card 5: ผู้แสดงความคิดเห็นแยกตามต้นทาง */}
-          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-pink-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-            <h3 className="text-[13px] font-bold text-white relative z-10">
-              ผู้แสดงความคิดเห็นแยกตามต้นทาง
-            </h3>
-            <div className="h-[180px] w-full flex items-center justify-center relative z-10">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={commentOriginsChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={75}
-                    stroke="none"
-                    dataKey="value"
-                  >
-                    {commentOriginsChartData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip
-                    contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
-                    itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            {/* Legend */}
-            <div className="grid grid-cols-2 gap-x-2 gap-y-2 mt-2 relative z-10 text-[10px]">
-              {commentOriginsChartData.slice(0, 6).map((entry, index) => {
-                const total = commentOriginsChartData.reduce((acc, curr) => acc + curr.value, 0);
-                return (
-                  <div key={index} className="flex items-center gap-1.5 text-slate-300">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[(index + 2) % COLORS.length] }}></span>
-                    <span className="truncate">{entry.name}</span>
-                    <span className="ml-auto font-bold text-white">{entry.value.toLocaleString()} คน ({(total > 0 ? (entry.value / total * 100) : 0).toFixed(1)}%)</span>
+                  <div className="space-y-1 text-[11px] text-slate-400 border-t border-orange-500/10 pt-2 mt-1">
+                    <div className="flex justify-between items-center whitespace-nowrap">
+                      <span>DAY 1:</span>
+                      <span className="text-orange-300 font-bold">{(stats.undecidedCountD1 || 0).toLocaleString()} คน</span>
+                    </div>
+                    <div className="flex justify-between items-center whitespace-nowrap">
+                      <span>DAY 2:</span>
+                      <span className="text-orange-300 font-bold">{(stats.undecidedCountD2 || 0).toLocaleString()} คน</span>
+                    </div>
+                    {stats.undecidedCountNone && stats.undecidedCountNone > 0 ? (
+                      <div className="flex justify-between items-center whitespace-nowrap">
+                        <span>ยังไม่เลือกวัน:</span>
+                        <span className="text-slate-300 font-bold">{stats.undecidedCountNone.toLocaleString()} คน</span>
+                      </div>
+                    ) : null}
                   </div>
-                );
-              })}
-            </div>
-          </div>
+                </div>
+              </div>
 
-        </div>
-      )}
+              {/* Card 3: Purple */}
+              <div className="bg-[#1e1335] border border-[#4c1d95] rounded-2xl p-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+                <div className="flex items-center gap-2 mb-3 relative z-10">
+                  <div className="p-1.5 bg-purple-500/20 text-purple-400 rounded-lg"><LayoutGrid className="w-3.5 h-3.5" /></div>
+                  <span className="text-xs text-slate-300 font-bold">ที่นั่งถูกจองแล้ว DAY 1</span>
+                </div>
+                <div className="relative z-10">
+                  <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                    <strong className="text-3xl font-black text-purple-400 tracking-tight">{stats.bookedCountD1.toLocaleString()}</strong>
+                    <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()} ที่นั่ง</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-purple-500/10 text-[11px] whitespace-nowrap">
+                    <span className="text-purple-400 font-bold">{((stats.bookedCountD1 / CAPACITY) * 100).toFixed(2)}%</span>
+                  </div>
+                </div>
+              </div>
 
-      {/* DETAILED DATA TABLE */}
-      {activeTab === 'feedbacks' && (
-        <div id="feedbacks" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 space-y-6 shadow-lg scroll-mt-20">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1e293b] pb-4">
-            <h3 className="text-[13px] font-bold text-white tracking-wide">
-              ความคิดเห็นและข้อเสนอแนะทั้งหมด ({filteredFeedbacks.length} รายการ)
-            </h3>
-            
-            <div className="relative w-full sm:max-w-xs">
-              <input
-                type="text"
-                value={feedbackSearch}
-                onChange={(e) => setFeedbackSearch(e.target.value)}
-                placeholder="ค้นหาข้อความ ชื่อ หรืออีเมล..."
-                className="bg-[#020617] border border-[#1e293b] rounded-lg px-8 py-2 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all placeholder:text-slate-600"
-              />
-              <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-500" />
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs whitespace-nowrap">
-              <thead>
-                <tr className="border-b border-[#1e293b] text-slate-400 font-bold tracking-wider">
-                  <th className="py-3 px-4 font-semibold">ลำดับ</th>
-                  <th className="py-3 px-4 font-semibold">อีเมล</th>
-                  <th className="py-3 px-4 font-semibold">ชื่อที่ใช้ในแฟนด้อม</th>
-                  <th className="py-3 px-4 font-semibold">วันเวลาที่ตอบ</th>
-                  <th className="py-3 px-4 font-semibold w-full">ข้อเสนอแนะเพิ่มเติม</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1e293b]/50">
-                {paginatedFeedbacks.length > 0 ? (
-                  paginatedFeedbacks.map((f, i) => (
-                    <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
-                      <td className="py-3.5 px-4 text-slate-500">
-                        {(feedbackPage - 1) * ITEMS_PER_PAGE + i + 1}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-300 font-mono text-[11px] group-hover:text-blue-400 transition-colors">{f.email}</td>
-                      <td className="py-3.5 px-4 font-bold text-slate-200">{f.name}</td>
-                      <td className="py-3.5 px-4 text-slate-400 text-[10px]">{new Date(f.timestamp).toLocaleString("th-TH")}</td>
-                      <td className="py-3.5 px-4 text-slate-400 max-w-[200px] sm:max-w-md overflow-hidden text-ellipsis leading-relaxed font-sans">{f.comments || "-"}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
-                      ไม่มีข้อมูลแสดงผลในขณะนี้
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* PAGINATION CONTROLS */}
-          {activeTab === 'feedbacks' && totalFeedbackPages > 1 && (
-            <div className="flex flex-wrap items-center justify-between border-t border-[#1e293b]/50 pt-4 mt-4 gap-4">
-              <span className="text-xs text-slate-400">
-                แสดงผล {(feedbackPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(feedbackPage * ITEMS_PER_PAGE, filteredFeedbacks.length)} จากทั้งหมด {filteredFeedbacks.length} รายการ
-              </span>
-              
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setFeedbackPage(prev => Math.max(prev - 1, 1))}
-                  disabled={feedbackPage === 1}
-                  className="p-1.5 border border-[#1e293b] rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-all cursor-pointer"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                
-                {Array.from({ length: Math.min(5, totalFeedbackPages) }, (_, idx) => {
-                  let pageNum = idx + 1;
-                  if (feedbackPage > 3 && totalFeedbackPages > 5) {
-                    if (feedbackPage + 2 > totalFeedbackPages) {
-                      pageNum = totalFeedbackPages - 4 + idx;
-                    } else {
-                      pageNum = feedbackPage - 2 + idx;
-                    }
-                  }
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => setFeedbackPage(pageNum)}
-                      className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                        feedbackPage === pageNum
-                          ? "bg-blue-600/25 border-blue-500/45 text-blue-400 font-black"
-                          : "border-[#1e293b] text-slate-400 hover:text-white hover:bg-[#1e293b]"
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-                
-                <button
-                  onClick={() => setFeedbackPage(prev => Math.min(prev + 1, totalFeedbackPages))}
-                  disabled={feedbackPage === totalFeedbackPages}
-                  className="p-1.5 border border-[#1e293b] rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-all cursor-pointer"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+              {/* Card 4: Yellow */}
+              <div className="bg-[#2a1d0d] border border-[#92400e] rounded-2xl p-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+                <div className="flex items-center gap-2 mb-3 relative z-10">
+                  <div className="p-1.5 bg-amber-500/20 text-amber-400 rounded-lg"><LayoutGrid className="w-3.5 h-3.5" /></div>
+                  <span className="text-xs text-slate-300 font-bold">ที่นั่งถูกจองแล้ว DAY 2</span>
+                </div>
+                <div className="relative z-10">
+                  <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                    <strong className="text-3xl font-black text-amber-400 tracking-tight">{stats.bookedCountD2.toLocaleString()}</strong>
+                    <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()} ที่นั่ง</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-amber-500/10 text-[11px] whitespace-nowrap">
+                    <span className="text-amber-400 font-bold">{((stats.bookedCountD2 / CAPACITY) * 100).toFixed(2)}%</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
-        </div>
-      )}
 
-      {/* ALL RESPONSES DATA TABLE */}
-      {activeTab === 'responses' && (
-        <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 space-y-6 shadow-lg">
-          
-          {/* HEADER & EXPORT CONTROLS */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1e293b] pb-4">
-            <div>
-              <h3 className="text-sm font-bold text-white tracking-wide">
-                รายชื่อผู้ตอบแบบสำรวจทั้งหมด ({filteredResponses.length} รายการ)
-              </h3>
-              <p className="text-[11px] text-slate-400 mt-1">แสดงผลข้อมูลดิบครบทุกคอลัมน์จากระบบ</p>
-            </div>
-            
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => handleExportExcel(false)}
-                className="px-3.5 py-2 bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-lg hover:bg-emerald-600/30 transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5" /> ส่งออกข้อมูลที่กรองอยู่ (.xls)
-              </button>
-              <button
-                onClick={() => handleExportExcel(true)}
-                className="px-3.5 py-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-600/30 transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5" /> ส่งออกทั้งหมด (.xls)
-              </button>
-            </div>
-          </div>
+          {/* CHARTS GRID */}
+          {activeTab === 'overview' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-          {/* FILTER BAR */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 bg-[#0b0f19] p-4 rounded-xl border border-[#1e293b]/50">
-            {/* Search */}
-            <div className="relative col-span-1 sm:col-span-2 lg:col-span-1">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">ค้นหา</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={respSearch}
-                  onChange={(e) => setRespSearch(e.target.value)}
-                  placeholder="ชื่อ, อีเมล, คำแนะนำ..."
-                  className="bg-[#020617] border border-[#1e293b] rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all placeholder:text-slate-600"
-                />
-                <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-500" />
+              {/* Card 1: แผนการเข้าร่วมงาน */}
+              <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+                <h3 className="text-[13px] font-bold text-white relative z-10">
+                  แผนการเข้าร่วมงาน
+                </h3>
+                <div className="h-[180px] w-full mt-2 relative z-10">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      layout="vertical"
+                      data={planChartData}
+                      margin={{ top: 0, right: 30, left: -10, bottom: 0 }}
+                    >
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 500 }} width={75} />
+                      <ChartTooltip
+                        cursor={{ fill: '#1e293b', opacity: 0.4 }}
+                        contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px" }}
+                        itemStyle={{ color: "#f8fafc", fontSize: '11px', fontWeight: 'bold' }}
+                      />
+                      <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={16}>
+                        {planChartData.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#8b5cf6', '#64748b'][index % 4]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Breakdown Table */}
+                <div className="mt-4 border-t border-[#1e293b] pt-4 text-[10px] font-sans text-slate-300 relative z-10">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="text-slate-400 font-bold border-b border-[#1e293b]/50">
+                        <th className="pb-2">แผนการเข้าร่วม</th>
+                        <th className="pb-2 text-right">รวมทั้ง 2 วัน</th>
+                        <th className="pb-2 text-right text-blue-400">DAY 1</th>
+                        <th className="pb-2 text-right text-amber-400">DAY 2</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#1e293b]/30">
+                      <tr className="hover:bg-white/[0.02]">
+                        <td className="py-2 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span> ไปแน่นอน
+                        </td>
+                        <td className="py-2 text-right font-bold text-white">{attendingPlanBreakdown.combined.definitely.toLocaleString()} คน</td>
+                        <td className="py-2 text-right text-blue-300">{attendingPlanBreakdown.day1.definitely.toLocaleString()} คน</td>
+                        <td className="py-2 text-right text-amber-300">{attendingPlanBreakdown.day2.definitely.toLocaleString()} คน</td>
+                      </tr>
+                      <tr className="hover:bg-white/[0.02]">
+                        <td className="py-2 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span> มีโอกาสไป
+                        </td>
+                        <td className="py-2 text-right font-bold text-white">{attendingPlanBreakdown.combined.probably.toLocaleString()} คน</td>
+                        <td className="py-2 text-right text-blue-300">{attendingPlanBreakdown.day1.probably.toLocaleString()} คน</td>
+                        <td className="py-2 text-right text-amber-300">{attendingPlanBreakdown.day2.probably.toLocaleString()} คน</td>
+                      </tr>
+                      <tr className="hover:bg-white/[0.02]">
+                        <td className="py-2 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span> ยังไม่แน่ใจ
+                        </td>
+                        <td className="py-2 text-right font-bold text-white">{attendingPlanBreakdown.combined.undecided.toLocaleString()} คน</td>
+                        <td className="py-2 text-right text-blue-300">{attendingPlanBreakdown.day1.undecided.toLocaleString()} คน</td>
+                        <td className="py-2 text-right text-amber-300">{attendingPlanBreakdown.day2.undecided.toLocaleString()} คน</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
 
-            {/* Filter Attending */}
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">แผนการเข้าร่วม</label>
-              <select
-                value={filterAttending}
-                onChange={(e) => setFilterAttending(e.target.value)}
-                className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
-              >
-                <option value="all">ทั้งหมด</option>
-                <option value="definitely">ไปแน่นอน (Definitely)</option>
-                <option value="probably">มีโอกาสไป (Probably)</option>
-                <option value="undecided">ยังไม่แน่ใจ (Undecided)</option>
-              </select>
-            </div>
+              {/* Card 2: สัดส่วนแหล่งที่มาของผู้เข้าร่วม */}
+              <div id="demographics" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden scroll-mt-20">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
 
-            {/* Filter Origin */}
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">ต้นทาง</label>
-              <select
-                value={filterOrigin}
-                onChange={(e) => setFilterOrigin(e.target.value)}
-                className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
-              >
-                <option value="all">ทั้งหมด</option>
-                {uniqueOrigins.map(origin => (
-                  <option key={origin} value={origin}>{origin}</option>
-                ))}
-              </select>
-            </div>
+                <div className="flex items-center justify-between gap-2 relative z-10 border-b border-[#1e293b]/40 pb-2">
+                  <h3 className="text-[13px] font-bold text-white">
+                    สัดส่วนแหล่งที่มาของผู้เข้าร่วม
+                  </h3>
 
-            {/* Filter Days */}
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">จำนวนวัน</label>
-              <select
-                value={filterDays}
-                onChange={(e) => setFilterDays(e.target.value)}
-                className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
-              >
-                <option value="all">ทั้งหมด</option>
-                <option value="day1">Day 1</option>
-                <option value="day2">Day 2</option>
-                <option value="both">Both Days</option>
-                <option value="undecided">ยังไม่ตัดสินใจ</option>
-              </select>
-            </div>
+                  {/* Day filter for demographics */}
+                  <div className="flex bg-slate-950 p-0.5 rounded-lg border border-[#1e293b] gap-0.5 shrink-0">
+                    <button
+                      onClick={() => setDemographicsDay("all")}
+                      className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${demographicsDay === "all"
+                          ? "bg-blue-500/25 text-blue-400 border border-blue-500/20"
+                          : "text-slate-500 hover:text-slate-300 border border-transparent"
+                        }`}
+                    >
+                      ทั้งหมด
+                    </button>
+                    <button
+                      onClick={() => setDemographicsDay("day1")}
+                      className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${demographicsDay === "day1"
+                          ? "bg-blue-500/20 text-blue-400 border border-blue-500/15"
+                          : "text-slate-500 hover:text-slate-300 border border-transparent"
+                        }`}
+                    >
+                      DAY 1
+                    </button>
+                    <button
+                      onClick={() => setDemographicsDay("day2")}
+                      className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${demographicsDay === "day2"
+                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/15"
+                          : "text-slate-500 hover:text-slate-300 border border-transparent"
+                        }`}
+                    >
+                      DAY 2
+                    </button>
+                  </div>
+                </div>
 
-            {/* Filter Price */}
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">ราคาที่สนใจ</label>
-              <select
-                value={filterPrice}
-                onChange={(e) => setFilterPrice(e.target.value)}
-                className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
-              >
-                <option value="all">ทั้งหมด</option>
-                {uniquePrices.map(price => (
-                  <option key={price} value={price}>{price}</option>
-                ))}
-              </select>
-            </div>
+                <div className="h-[180px] w-full flex items-center justify-center relative z-10">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={regionChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={75}
+                        stroke="none"
+                        dataKey="value"
+                      >
+                        {regionChartData.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip
+                        contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
+                        itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Legend */}
+                <div className="grid grid-cols-2 gap-x-2 gap-y-2 mt-2 relative z-10 text-[10px]">
+                  {regionChartData.slice(0, 6).map((entry, index) => {
+                    const total = regionChartData.reduce((acc, curr) => acc + curr.value, 0);
+                    return (
+                      <div key={index} className="flex items-center gap-1.5 text-slate-300">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+                        <span className="truncate">{entry.name}</span>
+                        <span className="ml-auto font-bold text-white">{(total > 0 ? (entry.value / total * 100) : 0).toFixed(1)}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
-            {/* Filter Has Comment */}
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">ข้อเสนอแนะ</label>
-              <select
-                value={filterHasComment}
-                onChange={(e) => setFilterHasComment(e.target.value)}
-                className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
-              >
-                <option value="all">ทั้งหมด</option>
-                <option value="yes">มีข้อเสนอแนะ</option>
-                <option value="no">ไม่มีข้อเสนอแนะ</option>
-              </select>
-            </div>
-          </div>
+              {/* Card 3: ราคาบัตรที่สนใจ */}
+              <div id="prices" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden scroll-mt-20">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
 
-          {/* SORT BAR */}
-          <div className="flex justify-between items-center bg-[#0b0f19]/30 px-4 py-2.5 rounded-xl border border-[#1e293b]/30">
-            <span className="text-[11px] text-slate-400">
-              พบข้อมูลที่ตรงเงื่อนไข <strong className="text-blue-400">{filteredResponses.length}</strong> จากทั้งหมด <strong className="text-slate-300">{stats.allResponses?.length || 0}</strong> รายการ
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-slate-500 uppercase">จัดเรียงตาม:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 transition-all cursor-pointer"
-              >
-                <option value="newest">ใหม่ล่าสุด (Newest)</option>
-                <option value="oldest">เก่าที่สุด (Oldest)</option>
-                <option value="name-asc">ชื่อตัวอักษร (ก-ฮ / A-Z)</option>
-                <option value="name-desc">ชื่อตัวอักษร (ฮ-ก / Z-A)</option>
-              </select>
-            </div>
-          </div>
+                <div className="flex items-center justify-between gap-2 relative z-10 border-b border-[#1e293b]/40 pb-2">
+                  <h3 className="text-[13px] font-bold text-white">
+                    ราคาบัตรที่สนใจ
+                  </h3>
 
-          {/* WIDE RESPONSIVE TABLE */}
-          <div className="overflow-x-auto border border-[#1e293b]/50 rounded-xl">
-            <table className="w-full text-left text-xs whitespace-nowrap">
-              <thead>
-                <tr className="bg-[#0b0f19]/80 border-b border-[#1e293b] text-slate-400 font-bold tracking-wider">
-                  <th className="py-3 px-4 font-semibold text-center w-12">ลำดับ</th>
-                  <th className="py-3 px-4 font-semibold w-40">วันเวลาที่ตอบ</th>
-                  <th className="py-3 px-4 font-semibold w-48">อีเมล</th>
-                  <th className="py-3 px-4 font-semibold w-44">ชื่อในแฟนด้อม</th>
-                  <th className="py-3 px-4 font-semibold text-center w-36">การเข้าร่วม</th>
-                  <th className="py-3 px-4 font-semibold w-48">ต้นทาง</th>
-                  <th className="py-3 px-4 font-semibold text-center w-32">จำนวนวัน</th>
-                  <th className="py-3 px-4 font-semibold text-center w-28">ราคา Day 1</th>
-                  <th className="py-3 px-4 font-semibold text-center w-28">ราคา Day 2</th>
-                  <th className="py-3 px-4 font-semibold w-96">ข้อเสนอแนะเพิ่มเติม</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1e293b]/50 bg-slate-900/10">
-                {paginatedResponses.length > 0 ? (
-                  paginatedResponses.map((r, i) => (
-                    <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
-                      <td className="py-3.5 px-4 text-center text-slate-500 font-mono">
-                        {(responsesPage - 1) * RESPONSES_PER_PAGE + i + 1}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-400 text-[10px] font-mono">
-                        {r.timestamp ? new Date(r.timestamp).toLocaleString("th-TH", { dateStyle: 'short', timeStyle: 'short' }) : "-"}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-300 font-mono text-[11px] group-hover:text-blue-400 transition-colors">
-                        {r.email}
-                      </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-200">{r.name}</td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide ${
-                          r.willAttend.includes("Definitely") || r.willAttend.includes("ไปแน่นอน")
-                            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
-                            : r.willAttend.includes("Probably") || r.willAttend.includes("มีโอกาสไป")
-                            ? "bg-blue-500/15 text-blue-400 border border-blue-500/20"
-                            : "bg-orange-500/15 text-orange-400 border border-orange-500/20"
-                        }`}>
-                          {r.willAttend.split(" / ")[0]}
+                  {/* Day filter for prices */}
+                  <div className="flex bg-slate-950 p-0.5 rounded-lg border border-[#1e293b] gap-0.5 shrink-0">
+                    <button
+                      onClick={() => setPriceFilterDays("1day")}
+                      className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${priceFilterDays === "1day"
+                          ? "bg-blue-500/25 text-blue-400 border border-blue-500/20"
+                          : "text-slate-500 hover:text-slate-300 border border-transparent"
+                        }`}
+                    >
+                      1 วัน
+                    </button>
+                    <button
+                      onClick={() => setPriceFilterDays("2days")}
+                      className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${priceFilterDays === "2days"
+                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/15"
+                          : "text-slate-500 hover:text-slate-300 border border-transparent"
+                        }`}
+                    >
+                      2 วัน
+                    </button>
+                  </div>
+                </div>
+
+                <div className="h-[180px] w-full flex items-center justify-center relative z-10">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={priceFilterDays === "1day" ? priceD1ChartData : priceD2ChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={75}
+                        stroke="none"
+                        dataKey="value"
+                      >
+                        {(priceFilterDays === "1day" ? priceD1ChartData : priceD2ChartData).map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip
+                        contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
+                        itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Legend */}
+                <div className="grid grid-cols-1 gap-y-2 mt-2 relative z-10 text-[10px]">
+                  {(priceFilterDays === "1day" ? priceD1ChartData : priceD2ChartData).slice(0, 5).map((entry, index) => {
+                    const total = priceFilterDays === "1day" ? stats.bookedCountD1 : stats.bookedCountD2;
+                    return (
+                      <div key={index} className="flex items-center gap-1.5 text-slate-300">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+                        <span>{entry.name}</span>
+                        <span className="ml-auto font-bold text-white">
+                          {entry.value.toLocaleString()} คน ({(total > 0 ? (entry.value / total * 100) : 0).toFixed(1)}%)
                         </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-300 font-sans text-[11px]">{r.origin || "-"}</td>
-                      <td className="py-3.5 px-4 text-center text-slate-300 font-medium">
-                        {r.attendDays ? r.attendDays.split(" / ")[0] : "-"}
-                      </td>
-                      <td className="py-3.5 px-4 text-center text-slate-400 font-mono text-[11px]">
-                        {r.priceD1 || "-"}
-                      </td>
-                      <td className="py-3.5 px-4 text-center text-slate-400 font-mono text-[11px]">
-                        {r.priceD2 || "-"}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-400 max-w-[240px] overflow-hidden text-ellipsis leading-relaxed font-sans" title={r.comments}>
-                        {r.comments || "-"}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={10} className="py-16 text-center text-slate-500 font-medium">
-                      ไม่พบข้อมูลผู้ตอบแบบสำรวจตามเงื่อนไขที่เลือก
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
-          {/* PAGINATION CONTROLS */}
-          {totalResponsesPages > 1 && (
-            <div className="flex flex-wrap items-center justify-between border-t border-[#1e293b]/50 pt-4 mt-4 gap-4">
-              <span className="text-xs text-slate-400">
-                แสดงผล {(responsesPage - 1) * RESPONSES_PER_PAGE + 1} - {Math.min(responsesPage * RESPONSES_PER_PAGE, filteredResponses.length)} จากทั้งหมด {filteredResponses.length} รายการ
-              </span>
-              
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setResponsesPage(prev => Math.max(prev - 1, 1))}
-                  disabled={responsesPage === 1}
-                  className="p-1.5 border border-[#1e293b] rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-all cursor-pointer"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                
-                {Array.from({ length: Math.min(5, totalResponsesPages) }, (_, idx) => {
-                  let pageNum = idx + 1;
-                  if (responsesPage > 3 && totalResponsesPages > 5) {
-                    if (responsesPage + 2 > totalResponsesPages) {
-                      pageNum = totalResponsesPages - 4 + idx;
-                    } else {
-                      pageNum = responsesPage - 2 + idx;
-                    }
-                  }
-                  return (
+              {/* Card 4: การเข้าร่วมงาน 2 วัน */}
+              <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+                <h3 className="text-[13px] font-bold text-white relative z-10">
+                  การเข้าร่วมงาน 2 วัน
+                </h3>
+                <div className="h-[180px] w-full flex items-center justify-center relative z-10">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={attendingDaysChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={75}
+                        stroke="none"
+                        dataKey="value"
+                      >
+                        {attendingDaysChartData.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip
+                        contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
+                        itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Legend */}
+                <div className="grid grid-cols-1 gap-y-2 mt-2 relative z-10 text-[10px]">
+                  {attendingDaysChartData.map((entry, index) => {
+                    const total = attendingDaysChartData.reduce((acc, curr) => acc + curr.value, 0);
+                    return (
+                      <div key={index} className="flex items-center gap-1.5 text-slate-300">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[(index + 3) % COLORS.length] }}></span>
+                        <span>{entry.name}</span>
+                        <span className="ml-auto font-bold text-white">{entry.value.toLocaleString()} คน ({(total > 0 ? (entry.value / total * 100) : 0).toFixed(1)}%)</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Card 5: ผู้แสดงความคิดเห็นแยกตามต้นทาง */}
+              <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-pink-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+                <h3 className="text-[13px] font-bold text-white relative z-10">
+                  ผู้แสดงความคิดเห็นแยกตามต้นทาง
+                </h3>
+                <div className="h-[180px] w-full flex items-center justify-center relative z-10">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={commentOriginsChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={75}
+                        stroke="none"
+                        dataKey="value"
+                      >
+                        {commentOriginsChartData.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip
+                        contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
+                        itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Legend */}
+                <div className="grid grid-cols-2 gap-x-2 gap-y-2 mt-2 relative z-10 text-[10px]">
+                  {commentOriginsChartData.slice(0, 6).map((entry, index) => {
+                    const total = commentOriginsChartData.reduce((acc, curr) => acc + curr.value, 0);
+                    return (
+                      <div key={index} className="flex items-center gap-1.5 text-slate-300">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[(index + 2) % COLORS.length] }}></span>
+                        <span className="truncate">{entry.name}</span>
+                        <span className="ml-auto font-bold text-white">{entry.value.toLocaleString()} คน ({(total > 0 ? (entry.value / total * 100) : 0).toFixed(1)}%)</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* DETAILED DATA TABLE */}
+          {activeTab === 'feedbacks' && (
+            <div id="feedbacks" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 space-y-6 shadow-lg scroll-mt-20">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1e293b] pb-4">
+                <h3 className="text-[13px] font-bold text-white tracking-wide">
+                  ความคิดเห็นและข้อเสนอแนะทั้งหมด ({filteredFeedbacks.length} รายการ)
+                </h3>
+
+                <div className="relative w-full sm:max-w-xs">
+                  <input
+                    type="text"
+                    value={feedbackSearch}
+                    onChange={(e) => setFeedbackSearch(e.target.value)}
+                    placeholder="ค้นหาข้อความ ชื่อ หรืออีเมล..."
+                    className="bg-[#020617] border border-[#1e293b] rounded-lg px-8 py-2 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all placeholder:text-slate-600"
+                  />
+                  <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-500" />
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs whitespace-nowrap">
+                  <thead>
+                    <tr className="border-b border-[#1e293b] text-slate-400 font-bold tracking-wider">
+                      <th className="py-3 px-4 font-semibold">ลำดับ</th>
+                      <th className="py-3 px-4 font-semibold">อีเมล</th>
+                      <th className="py-3 px-4 font-semibold">ชื่อที่ใช้ในแฟนด้อม</th>
+                      <th className="py-3 px-4 font-semibold">วันเวลาที่ตอบ</th>
+                      <th className="py-3 px-4 font-semibold w-full">ข้อเสนอแนะเพิ่มเติม</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#1e293b]/50">
+                    {paginatedFeedbacks.length > 0 ? (
+                      paginatedFeedbacks.map((f, i) => (
+                        <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
+                          <td className="py-3.5 px-4 text-slate-500">
+                            {(feedbackPage - 1) * ITEMS_PER_PAGE + i + 1}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-300 font-mono text-[11px] group-hover:text-blue-400 transition-colors">{f.email}</td>
+                          <td className="py-3.5 px-4 font-bold text-slate-200">{f.name}</td>
+                          <td className="py-3.5 px-4 text-slate-400 text-[10px]">{new Date(f.timestamp).toLocaleString("th-TH")}</td>
+                          <td className="py-3.5 px-4 text-slate-400 max-w-[200px] sm:max-w-md overflow-hidden text-ellipsis leading-relaxed font-sans">{f.comments || "-"}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                          ไม่มีข้อมูลแสดงผลในขณะนี้
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* PAGINATION CONTROLS */}
+              {activeTab === 'feedbacks' && totalFeedbackPages > 1 && (
+                <div className="flex flex-wrap items-center justify-between border-t border-[#1e293b]/50 pt-4 mt-4 gap-4">
+                  <span className="text-xs text-slate-400">
+                    แสดงผล {(feedbackPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(feedbackPage * ITEMS_PER_PAGE, filteredFeedbacks.length)} จากทั้งหมด {filteredFeedbacks.length} รายการ
+                  </span>
+
+                  <div className="flex items-center gap-1">
                     <button
-                      key={pageNum}
-                      onClick={() => setResponsesPage(pageNum)}
-                      className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                        responsesPage === pageNum
-                          ? "bg-blue-600/25 border-blue-500/45 text-blue-400 font-black"
-                          : "border-[#1e293b] text-slate-400 hover:text-white hover:bg-[#1e293b]"
-                      }`}
+                      onClick={() => setFeedbackPage(prev => Math.max(prev - 1, 1))}
+                      disabled={feedbackPage === 1}
+                      className="p-1.5 border border-[#1e293b] rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-all cursor-pointer"
                     >
-                      {pageNum}
+                      <ChevronLeft className="w-4 h-4" />
                     </button>
-                  );
-                })}
-                
-                <button
-                  onClick={() => setResponsesPage(prev => Math.min(prev + 1, totalResponsesPages))}
-                  disabled={responsesPage === totalResponsesPages}
-                  className="p-1.5 border border-[#1e293b] rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-all cursor-pointer"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+
+                    {Array.from({ length: Math.min(5, totalFeedbackPages) }, (_, idx) => {
+                      let pageNum = idx + 1;
+                      if (feedbackPage > 3 && totalFeedbackPages > 5) {
+                        if (feedbackPage + 2 > totalFeedbackPages) {
+                          pageNum = totalFeedbackPages - 4 + idx;
+                        } else {
+                          pageNum = feedbackPage - 2 + idx;
+                        }
+                      }
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setFeedbackPage(pageNum)}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${feedbackPage === pageNum
+                              ? "bg-blue-600/25 border-blue-500/45 text-blue-400 font-black"
+                              : "border-[#1e293b] text-slate-400 hover:text-white hover:bg-[#1e293b]"
+                            }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      onClick={() => setFeedbackPage(prev => Math.min(prev + 1, totalFeedbackPages))}
+                      disabled={feedbackPage === totalFeedbackPages}
+                      className="p-1.5 border border-[#1e293b] rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-all cursor-pointer"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ALL RESPONSES DATA TABLE */}
+          {activeTab === 'responses' && (
+            <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 space-y-6 shadow-lg">
+
+              {/* HEADER & EXPORT CONTROLS */}
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1e293b] pb-4">
+                <div>
+                  <h3 className="text-sm font-bold text-white tracking-wide">
+                    รายชื่อผู้ตอบแบบสำรวจทั้งหมด ({filteredResponses.length} รายการ)
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mt-1">แสดงผลข้อมูลดิบครบทุกคอลัมน์จากระบบ</p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => handleExportExcel(false)}
+                    className="px-3.5 py-2 bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-lg hover:bg-emerald-600/30 transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" /> ส่งออกข้อมูลที่กรองอยู่ (.xls)
+                  </button>
+                  <button
+                    onClick={() => handleExportExcel(true)}
+                    className="px-3.5 py-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-600/30 transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" /> ส่งออกทั้งหมด (.xls)
+                  </button>
+                </div>
+              </div>
+
+              {/* FILTER BAR */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 bg-[#0b0f19] p-4 rounded-xl border border-[#1e293b]/50">
+                {/* Search */}
+                <div className="relative col-span-1 sm:col-span-2 lg:col-span-1">
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">ค้นหา</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={respSearch}
+                      onChange={(e) => setRespSearch(e.target.value)}
+                      placeholder="ชื่อ, อีเมล, คำแนะนำ..."
+                      className="bg-[#020617] border border-[#1e293b] rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all placeholder:text-slate-600"
+                    />
+                    <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-500" />
+                  </div>
+                </div>
+
+                {/* Filter Attending */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">แผนการเข้าร่วม</label>
+                  <select
+                    value={filterAttending}
+                    onChange={(e) => setFilterAttending(e.target.value)}
+                    className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
+                  >
+                    <option value="all">ทั้งหมด</option>
+                    <option value="definitely">ไปแน่นอน (Definitely)</option>
+                    <option value="probably">มีโอกาสไป (Probably)</option>
+                    <option value="undecided">ยังไม่แน่ใจ (Undecided)</option>
+                  </select>
+                </div>
+
+                {/* Filter Origin */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">ต้นทาง</label>
+                  <select
+                    value={filterOrigin}
+                    onChange={(e) => setFilterOrigin(e.target.value)}
+                    className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
+                  >
+                    <option value="all">ทั้งหมด</option>
+                    {uniqueOrigins.map(origin => (
+                      <option key={origin} value={origin}>{origin}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Filter Days */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">จำนวนวัน</label>
+                  <select
+                    value={filterDays}
+                    onChange={(e) => setFilterDays(e.target.value)}
+                    className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
+                  >
+                    <option value="all">ทั้งหมด</option>
+                    <option value="day1">Day 1</option>
+                    <option value="day2">Day 2</option>
+                    <option value="both">Both Days</option>
+                    <option value="undecided">ยังไม่ตัดสินใจ</option>
+                  </select>
+                </div>
+
+                {/* Filter Price */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">ราคาที่สนใจ</label>
+                  <select
+                    value={filterPrice}
+                    onChange={(e) => setFilterPrice(e.target.value)}
+                    className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
+                  >
+                    <option value="all">ทั้งหมด</option>
+                    {uniquePrices.map(price => (
+                      <option key={price} value={price}>{price}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Filter Has Comment */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">ข้อเสนอแนะ</label>
+                  <select
+                    value={filterHasComment}
+                    onChange={(e) => setFilterHasComment(e.target.value)}
+                    className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
+                  >
+                    <option value="all">ทั้งหมด</option>
+                    <option value="yes">มีข้อเสนอแนะ</option>
+                    <option value="no">ไม่มีข้อเสนอแนะ</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* SORT BAR */}
+              <div className="flex justify-between items-center bg-[#0b0f19]/30 px-4 py-2.5 rounded-xl border border-[#1e293b]/30">
+                <span className="text-[11px] text-slate-400">
+                  พบข้อมูลที่ตรงเงื่อนไข <strong className="text-blue-400">{filteredResponses.length}</strong> จากทั้งหมด <strong className="text-slate-300">{stats.allResponses?.length || 0}</strong> รายการ
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">จัดเรียงตาม:</span>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 transition-all cursor-pointer"
+                  >
+                    <option value="newest">ใหม่ล่าสุด (Newest)</option>
+                    <option value="oldest">เก่าที่สุด (Oldest)</option>
+                    <option value="name-asc">ชื่อตัวอักษร (ก-ฮ / A-Z)</option>
+                    <option value="name-desc">ชื่อตัวอักษร (ฮ-ก / Z-A)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* WIDE RESPONSIVE TABLE */}
+              <div className="overflow-x-auto border border-[#1e293b]/50 rounded-xl">
+                <table className="w-full text-left text-xs whitespace-nowrap">
+                  <thead>
+                    <tr className="bg-[#0b0f19]/80 border-b border-[#1e293b] text-slate-400 font-bold tracking-wider">
+                      <th className="py-3 px-4 font-semibold text-center w-12">ลำดับ</th>
+                      <th className="py-3 px-4 font-semibold w-40">วันเวลาที่ตอบ</th>
+                      <th className="py-3 px-4 font-semibold w-48">อีเมล</th>
+                      <th className="py-3 px-4 font-semibold w-44">ชื่อในแฟนด้อม</th>
+                      <th className="py-3 px-4 font-semibold text-center w-36">การเข้าร่วม</th>
+                      <th className="py-3 px-4 font-semibold w-48">ต้นทาง</th>
+                      <th className="py-3 px-4 font-semibold text-center w-32">จำนวนวัน</th>
+                      <th className="py-3 px-4 font-semibold text-center w-28">ราคา Day 1</th>
+                      <th className="py-3 px-4 font-semibold text-center w-28">ราคา Day 2</th>
+                      <th className="py-3 px-4 font-semibold w-96">ข้อเสนอแนะเพิ่มเติม</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#1e293b]/50 bg-slate-900/10">
+                    {paginatedResponses.length > 0 ? (
+                      paginatedResponses.map((r, i) => (
+                        <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
+                          <td className="py-3.5 px-4 text-center text-slate-500 font-mono">
+                            {(responsesPage - 1) * RESPONSES_PER_PAGE + i + 1}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-400 text-[10px] font-mono">
+                            {r.timestamp ? new Date(r.timestamp).toLocaleString("th-TH", { dateStyle: 'short', timeStyle: 'short' }) : "-"}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-300 font-mono text-[11px] group-hover:text-blue-400 transition-colors">
+                            {r.email}
+                          </td>
+                          <td className="py-3.5 px-4 font-bold text-slate-200">{r.name}</td>
+                          <td className="py-3.5 px-4 text-center">
+                            <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide ${r.willAttend.includes("Definitely") || r.willAttend.includes("ไปแน่นอน")
+                                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
+                                : r.willAttend.includes("Probably") || r.willAttend.includes("มีโอกาสไป")
+                                  ? "bg-blue-500/15 text-blue-400 border border-blue-500/20"
+                                  : "bg-orange-500/15 text-orange-400 border border-orange-500/20"
+                              }`}>
+                              {r.willAttend.split(" / ")[0]}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-300 font-sans text-[11px]">{r.origin || "-"}</td>
+                          <td className="py-3.5 px-4 text-center text-slate-300 font-medium">
+                            {r.attendDays ? r.attendDays.split(" / ")[0] : "-"}
+                          </td>
+                          <td className="py-3.5 px-4 text-center text-slate-400 font-mono text-[11px]">
+                            {r.priceD1 || "-"}
+                          </td>
+                          <td className="py-3.5 px-4 text-center text-slate-400 font-mono text-[11px]">
+                            {r.priceD2 || "-"}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-400 max-w-[240px] overflow-hidden text-ellipsis leading-relaxed font-sans" title={r.comments}>
+                            {r.comments || "-"}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={10} className="py-16 text-center text-slate-500 font-medium">
+                          ไม่พบข้อมูลผู้ตอบแบบสำรวจตามเงื่อนไขที่เลือก
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* PAGINATION CONTROLS */}
+              {totalResponsesPages > 1 && (
+                <div className="flex flex-wrap items-center justify-between border-t border-[#1e293b]/50 pt-4 mt-4 gap-4">
+                  <span className="text-xs text-slate-400">
+                    แสดงผล {(responsesPage - 1) * RESPONSES_PER_PAGE + 1} - {Math.min(responsesPage * RESPONSES_PER_PAGE, filteredResponses.length)} จากทั้งหมด {filteredResponses.length} รายการ
+                  </span>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setResponsesPage(prev => Math.max(prev - 1, 1))}
+                      disabled={responsesPage === 1}
+                      className="p-1.5 border border-[#1e293b] rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-all cursor-pointer"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    {Array.from({ length: Math.min(5, totalResponsesPages) }, (_, idx) => {
+                      let pageNum = idx + 1;
+                      if (responsesPage > 3 && totalResponsesPages > 5) {
+                        if (responsesPage + 2 > totalResponsesPages) {
+                          pageNum = totalResponsesPages - 4 + idx;
+                        } else {
+                          pageNum = responsesPage - 2 + idx;
+                        }
+                      }
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setResponsesPage(pageNum)}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${responsesPage === pageNum
+                              ? "bg-blue-600/25 border-blue-500/45 text-blue-400 font-black"
+                              : "border-[#1e293b] text-slate-400 hover:text-white hover:bg-[#1e293b]"
+                            }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      onClick={() => setResponsesPage(prev => Math.min(prev + 1, totalResponsesPages))}
+                      disabled={responsesPage === totalResponsesPages}
+                      className="p-1.5 border border-[#1e293b] rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-all cursor-pointer"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* UNDECIDED DATA TABLE */}
+          {activeTab === 'undecided' && (
+            <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 space-y-6 shadow-lg">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1e293b] pb-4">
+                <h3 className="text-[13px] font-bold text-white tracking-wide">
+                  รายชื่อผู้ยังไม่แน่ใจ ({stats.undecidedResponses?.length || 0} รายการ)
+                </h3>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs whitespace-nowrap">
+                  <thead>
+                    <tr className="border-b border-[#1e293b] text-slate-400 font-bold tracking-wider">
+                      <th className="py-3 px-4 font-semibold">ลำดับ</th>
+                      <th className="py-3 px-4 font-semibold">อีเมล</th>
+                      <th className="py-3 px-4 font-semibold">ชื่อที่ใช้ในแฟนด้อม</th>
+                      <th className="py-3 px-4 font-semibold">จำนวนวัน</th>
+                      <th className="py-3 px-4 font-semibold">โซน Day 1</th>
+                      <th className="py-3 px-4 font-semibold">โซน Day 2</th>
+                      <th className="py-3 px-4 font-semibold font-sans">ต้นทาง</th>
+                      <th className="py-3 px-4 font-semibold">วันเวลาที่ตอบ</th>
+                      <th className="py-3 px-4 font-semibold w-full">ข้อเสนอแนะเพิ่มเติม</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#1e293b]/50">
+                    {stats.undecidedResponses && stats.undecidedResponses.length > 0 ? (
+                      stats.undecidedResponses.map((f, i) => (
+                        <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
+                          <td className="py-3.5 px-4 text-slate-500">{i + 1}</td>
+                          <td className="py-3.5 px-4 text-slate-300 font-mono text-[11px] group-hover:text-blue-400 transition-colors">{f.email}</td>
+                          <td className="py-3.5 px-4 font-bold text-slate-200">{f.name}</td>
+                          <td className="py-3.5 px-4 text-slate-300">{f.attendDays || "-"}</td>
+                          <td className="py-3.5 px-4 text-blue-400 text-[11px]">{f.priceD1 || "-"}</td>
+                          <td className="py-3.5 px-4 text-amber-500 text-[11px]">{f.priceD2 || "-"}</td>
+                          <td className="py-3.5 px-4 text-slate-400 text-[11px] font-sans">{f.origin || "-"}</td>
+                          <td className="py-3.5 px-4 text-slate-400 text-[10px]">{new Date(f.timestamp).toLocaleString("th-TH")}</td>
+                          <td className="py-3.5 px-4 text-slate-400 max-w-[200px] sm:max-w-md overflow-hidden text-ellipsis leading-relaxed font-sans">{f.comments || "-"}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                          ไม่มีข้อมูลแสดงผลในขณะนี้
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* UNDECIDED DATA TABLE */}
-      {activeTab === 'undecided' && (
-        <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 space-y-6 shadow-lg">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1e293b] pb-4">
-            <h3 className="text-[13px] font-bold text-white tracking-wide">
-              รายชื่อผู้ยังไม่แน่ใจ ({stats.undecidedResponses?.length || 0} รายการ)
-            </h3>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs whitespace-nowrap">
-              <thead>
-                <tr className="border-b border-[#1e293b] text-slate-400 font-bold tracking-wider">
-                  <th className="py-3 px-4 font-semibold">ลำดับ</th>
-                  <th className="py-3 px-4 font-semibold">อีเมล</th>
-                  <th className="py-3 px-4 font-semibold">ชื่อที่ใช้ในแฟนด้อม</th>
-                  <th className="py-3 px-4 font-semibold">จำนวนวัน</th>
-                  <th className="py-3 px-4 font-semibold">โซน Day 1</th>
-                  <th className="py-3 px-4 font-semibold">โซน Day 2</th>
-                  <th className="py-3 px-4 font-semibold font-sans">ต้นทาง</th>
-                  <th className="py-3 px-4 font-semibold">วันเวลาที่ตอบ</th>
-                  <th className="py-3 px-4 font-semibold w-full">ข้อเสนอแนะเพิ่มเติม</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1e293b]/50">
-                {stats.undecidedResponses && stats.undecidedResponses.length > 0 ? (
-                  stats.undecidedResponses.map((f, i) => (
-                    <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
-                      <td className="py-3.5 px-4 text-slate-500">{i + 1}</td>
-                      <td className="py-3.5 px-4 text-slate-300 font-mono text-[11px] group-hover:text-blue-400 transition-colors">{f.email}</td>
-                      <td className="py-3.5 px-4 font-bold text-slate-200">{f.name}</td>
-                      <td className="py-3.5 px-4 text-slate-300">{f.attendDays || "-"}</td>
-                      <td className="py-3.5 px-4 text-blue-400 text-[11px]">{f.priceD1 || "-"}</td>
-                      <td className="py-3.5 px-4 text-amber-500 text-[11px]">{f.priceD2 || "-"}</td>
-                      <td className="py-3.5 px-4 text-slate-400 text-[11px] font-sans">{f.origin || "-"}</td>
-                      <td className="py-3.5 px-4 text-slate-400 text-[10px]">{new Date(f.timestamp).toLocaleString("th-TH")}</td>
-                      <td className="py-3.5 px-4 text-slate-400 max-w-[200px] sm:max-w-md overflow-hidden text-ellipsis leading-relaxed font-sans">{f.comments || "-"}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
-                      ไม่มีข้อมูลแสดงผลในขณะนี้
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* SEATING MAP */}
-      {activeTab === 'seating' && (
-        <div className="space-y-6">
-          {/* DAY SELECTOR & HEADER */}
-          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 shadow-lg flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h3 className="text-sm font-bold text-white tracking-wide">
-                รายงานความจุและผังที่นั่ง (Seating Capacity & Layout)
-              </h3>
-              <p className="text-[11px] text-slate-400 mt-1">
-                แสดงข้อมูลสถิติการจองและตำแหน่งที่นั่งของแต่ละวัน
-              </p>
-            </div>
-            
-            <div className="flex gap-2">
-              <button
-                onClick={() => setSeatingTabDay("day1")}
-                className={`px-5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                  seatingTabDay === "day1"
-                    ? "bg-blue-500/20 text-blue-400 border-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.2)] font-extrabold"
-                    : "bg-slate-950 border-[#1e293b] text-slate-400 hover:text-white hover:bg-slate-900"
-                }`}
-              >
-                DAY 1 (วันเสาร์)
-              </button>
-              <button
-                onClick={() => setSeatingTabDay("day2")}
-                className={`px-5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                  seatingTabDay === "day2"
-                    ? "bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.2)] font-extrabold"
-                    : "bg-slate-950 border-[#1e293b] text-slate-400 hover:text-white hover:bg-slate-900"
-                }`}
-              >
-                DAY 2 (วันอาทิตย์)
-              </button>
-            </div>
-          </div>
-
-          {/* OVERVIEW STATS CARDS FOR SELECTED DAY */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {/* Card 1: Blue */}
-            <div className="bg-[#0b1b36] border border-[#1e3a8a] rounded-2xl p-5 relative overflow-hidden shadow-lg">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-              <div className="flex items-center gap-2 mb-3 relative z-10">
-                <div className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg"><MessageSquare className="w-3.5 h-3.5" /></div>
-                <span className="text-xs text-slate-300 font-bold">ผู้ตอบแบบสำรวจทั้งหมด</span>
-              </div>
-              <div className="relative z-10">
-                <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-                  <strong className="text-3xl font-black text-blue-400 tracking-tight">{seatingDayStats.total.toLocaleString()}</strong>
-                  <span className="text-xs text-slate-400 font-medium">คน</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: Green */}
-            <div className="bg-[#06261a] border border-[#065f46] rounded-2xl p-5 relative overflow-hidden shadow-lg">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-              <div className="flex items-center gap-2 mb-3 relative z-10">
-                <div className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg"><CheckCircle2 className="w-3.5 h-3.5" /></div>
-                <span className="text-xs text-slate-300 font-bold">ผู้มีแผนเข้าร่วมงาน</span>
-              </div>
-              <div className="relative z-10">
-                <div className="flex items-baseline gap-1.5 flex-wrap">
-                  <strong className="text-3xl font-black text-emerald-400 tracking-tight">{seatingDayStats.attending.toLocaleString()}</strong>
-                  <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
-                    คน <span className="text-emerald-500 ml-1">({seatingDayStats.attendingPercent.toFixed(2)}%)</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3: Orange (Undecided) */}
-            <div className="bg-[#241a15] border border-[#78350f] rounded-2xl p-5 relative overflow-hidden shadow-lg">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-              <div className="flex items-center gap-2 mb-3 relative z-10">
-                <div className="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg"><HelpCircle className="w-3.5 h-3.5" /></div>
-                <span className="text-xs text-slate-300 font-bold">ผู้ยังไม่แน่ใจ</span>
-              </div>
-              <div className="relative z-10">
-                <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-                  <strong className="text-3xl font-black text-orange-400 tracking-tight">{seatingDayStats.undecided.toLocaleString()}</strong>
-                  <span className="text-xs text-slate-400 font-medium">คน</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 4: Purple (DAY 1 Booked) */}
-            <div className={`bg-[#1e1335] border rounded-2xl p-5 relative overflow-hidden shadow-lg transition-all duration-350 ${
-              seatingTabDay === 'day1' 
-                ? 'border-purple-500 shadow-[0_0_25px_rgba(139,92,246,0.2)] ring-1 ring-purple-500/30' 
-                : 'border-[#4c1d95]/50 opacity-40 hover:opacity-75'
-            }`}>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-              <div className="flex items-center gap-2 mb-3 relative z-10">
-                <div className="p-1.5 bg-purple-500/20 text-purple-400 rounded-lg"><LayoutGrid className="w-3.5 h-3.5" /></div>
-                <span className="text-xs text-slate-300 font-bold">ที่นั่งถูกจองแล้ว DAY 1</span>
-              </div>
-              <div className="relative z-10">
-                <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-                  <strong className="text-3xl font-black text-purple-400 tracking-tight">{stats.bookedCountD1.toLocaleString()}</strong>
-                  <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()} ที่นั่ง</span>
-                </div>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-purple-500/10 text-[11px] whitespace-nowrap">
-                  <span className="text-purple-400 font-bold">{((stats.bookedCountD1 / CAPACITY) * 100).toFixed(2)}%</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 5: Yellow (DAY 2 Booked) */}
-            <div className={`bg-[#2a1d0d] border rounded-2xl p-5 relative overflow-hidden shadow-lg transition-all duration-350 ${
-              seatingTabDay === 'day2' 
-                ? 'border-amber-500 shadow-[0_0_25px_rgba(245,158,11,0.2)] ring-1 ring-amber-500/30' 
-                : 'border-[#92400e]/50 opacity-40 hover:opacity-75'
-            }`}>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-              <div className="flex items-center gap-2 mb-3 relative z-10">
-                <div className="p-1.5 bg-amber-500/20 text-amber-400 rounded-lg"><LayoutGrid className="w-3.5 h-3.5" /></div>
-                <span className="text-xs text-slate-300 font-bold">ที่นั่งถูกจองแล้ว DAY 2</span>
-              </div>
-              <div className="relative z-10">
-                <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-                  <strong className="text-3xl font-black text-amber-400 tracking-tight">{stats.bookedCountD2.toLocaleString()}</strong>
-                  <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()} ที่นั่ง</span>
-                </div>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-amber-500/10 text-[11px] whitespace-nowrap">
-                  <span className="text-amber-400 font-bold">{((stats.bookedCountD2 / CAPACITY) * 100).toFixed(2)}%</span>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* SEATING MAP */}
-          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 shadow-lg">
-            <h4 className="text-xs font-bold text-white tracking-wide border-b border-[#1e293b] pb-4 mb-6 flex items-center justify-between">
-              <span>แผนผังที่นั่งจำลอง - {seatingTabDay === 'day1' ? 'DAY 1 (สีน้ำเงิน)' : 'DAY 2 (สีเหลือง)'}</span>
-            </h4>
-            <SeatingLayoutMap 
-              key={seatingTabDay} 
-              bookedD1Count={stats.bookedCountD1} 
-              bookedD2Count={stats.bookedCountD2} 
-              initialDay={seatingTabDay} 
-              showSelector={false}
-            />
-          </div>
-        </div>
-      )}
+          {activeTab === 'seating' && (
+            <div className="space-y-6">
+              {/* DAY SELECTOR & HEADER */}
+              <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 shadow-lg flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-bold text-white tracking-wide">
+                    รายงานความจุและผังที่นั่ง (Seating Capacity & Layout)
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    แสดงข้อมูลสถิติการจองและตำแหน่งที่นั่งของแต่ละวัน
+                  </p>
+                </div>
 
-      {/* SETTINGS */}
-      {activeTab === 'settings' && (
-        <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 shadow-lg max-w-2xl">
-          <h3 className="text-[13px] font-bold text-white tracking-wide border-b border-[#1e293b] pb-4 mb-4">
-            ตั้งค่าระบบ (System Settings)
-          </h3>
-          <div className="flex items-center justify-between bg-[#121b29] p-4 rounded-xl border border-[#1c2536]">
-            <div>
-              <p className="text-sm font-bold text-slate-200">แสดงสถิติแบบเรียลไทม์บนหน้าเว็บสาธารณะ</p>
-              <p className="text-[11px] text-slate-400 mt-1">หากเปิดใช้งาน ผู้เข้าชมเว็บไซต์ทั่วไปจะเห็นกล่อง 4 สีสรุปข้อมูล (สถิติหน้าโหลดเข้าเว็บ)</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSeatingTabDay("day1")}
+                    className={`px-5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${seatingTabDay === "day1"
+                        ? "bg-blue-500/20 text-blue-400 border-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.2)] font-extrabold"
+                        : "bg-slate-950 border-[#1e293b] text-slate-400 hover:text-white hover:bg-slate-900"
+                      }`}
+                  >
+                    DAY 1 (วันเสาร์)
+                  </button>
+                  <button
+                    onClick={() => setSeatingTabDay("day2")}
+                    className={`px-5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${seatingTabDay === "day2"
+                        ? "bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.2)] font-extrabold"
+                        : "bg-slate-950 border-[#1e293b] text-slate-400 hover:text-white hover:bg-slate-900"
+                      }`}
+                  >
+                    DAY 2 (วันอาทิตย์)
+                  </button>
+                </div>
+              </div>
+
+              {/* OVERVIEW STATS CARDS FOR SELECTED DAY */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                {/* Card 1: Blue */}
+                <div className="bg-[#0b1b36] border border-[#1e3a8a] rounded-2xl p-5 relative overflow-hidden shadow-lg">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+                  <div className="flex items-center gap-2 mb-3 relative z-10">
+                    <div className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg"><MessageSquare className="w-3.5 h-3.5" /></div>
+                    <span className="text-xs text-slate-300 font-bold">ผู้ตอบแบบสำรวจทั้งหมด</span>
+                  </div>
+                  <div className="relative z-10">
+                    <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                      <strong className="text-3xl font-black text-blue-400 tracking-tight">{seatingDayStats.total.toLocaleString()}</strong>
+                      <span className="text-xs text-slate-400 font-medium">คน</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: Green */}
+                <div className="bg-[#06261a] border border-[#065f46] rounded-2xl p-5 relative overflow-hidden shadow-lg">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+                  <div className="flex items-center gap-2 mb-3 relative z-10">
+                    <div className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg"><CheckCircle2 className="w-3.5 h-3.5" /></div>
+                    <span className="text-xs text-slate-300 font-bold">ผู้มีแผนเข้าร่วมงาน</span>
+                  </div>
+                  <div className="relative z-10">
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      <strong className="text-3xl font-black text-emerald-400 tracking-tight">{seatingDayStats.attending.toLocaleString()}</strong>
+                      <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                        คน <span className="text-emerald-500 ml-1">({seatingDayStats.attendingPercent.toFixed(2)}%)</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 3: Orange (Undecided) */}
+                <div className="bg-[#241a15] border border-[#78350f] rounded-2xl p-5 relative overflow-hidden shadow-lg">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+                  <div className="flex items-center gap-2 mb-3 relative z-10">
+                    <div className="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg"><HelpCircle className="w-3.5 h-3.5" /></div>
+                    <span className="text-xs text-slate-300 font-bold">ผู้ยังไม่แน่ใจ</span>
+                  </div>
+                  <div className="relative z-10">
+                    <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                      <strong className="text-3xl font-black text-orange-400 tracking-tight">{seatingDayStats.undecided.toLocaleString()}</strong>
+                      <span className="text-xs text-slate-400 font-medium">คน</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 4: Purple (DAY 1 Booked) */}
+                <div className={`bg-[#1e1335] border rounded-2xl p-5 relative overflow-hidden shadow-lg transition-all duration-350 ${seatingTabDay === 'day1'
+                    ? 'border-purple-500 shadow-[0_0_25px_rgba(139,92,246,0.2)] ring-1 ring-purple-500/30'
+                    : 'border-[#4c1d95]/50 opacity-40 hover:opacity-75'
+                  }`}>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+                  <div className="flex items-center gap-2 mb-3 relative z-10">
+                    <div className="p-1.5 bg-purple-500/20 text-purple-400 rounded-lg"><LayoutGrid className="w-3.5 h-3.5" /></div>
+                    <span className="text-xs text-slate-300 font-bold">ที่นั่งถูกจองแล้ว DAY 1</span>
+                  </div>
+                  <div className="relative z-10">
+                    <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                      <strong className="text-3xl font-black text-purple-400 tracking-tight">{stats.bookedCountD1.toLocaleString()}</strong>
+                      <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()} ที่นั่ง</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-purple-500/10 text-[11px] whitespace-nowrap">
+                      <span className="text-purple-400 font-bold">{((stats.bookedCountD1 / CAPACITY) * 100).toFixed(2)}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 5: Yellow (DAY 2 Booked) */}
+                <div className={`bg-[#2a1d0d] border rounded-2xl p-5 relative overflow-hidden shadow-lg transition-all duration-350 ${seatingTabDay === 'day2'
+                    ? 'border-amber-500 shadow-[0_0_25px_rgba(245,158,11,0.2)] ring-1 ring-amber-500/30'
+                    : 'border-[#92400e]/50 opacity-40 hover:opacity-75'
+                  }`}>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+                  <div className="flex items-center gap-2 mb-3 relative z-10">
+                    <div className="p-1.5 bg-amber-500/20 text-amber-400 rounded-lg"><LayoutGrid className="w-3.5 h-3.5" /></div>
+                    <span className="text-xs text-slate-300 font-bold">ที่นั่งถูกจองแล้ว DAY 2</span>
+                  </div>
+                  <div className="relative z-10">
+                    <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                      <strong className="text-3xl font-black text-amber-400 tracking-tight">{stats.bookedCountD2.toLocaleString()}</strong>
+                      <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()} ที่นั่ง</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-amber-500/10 text-[11px] whitespace-nowrap">
+                      <span className="text-amber-400 font-bold">{((stats.bookedCountD2 / CAPACITY) * 100).toFixed(2)}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEATING MAP */}
+              <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 shadow-lg">
+                <h4 className="text-xs font-bold text-white tracking-wide border-b border-[#1e293b] pb-4 mb-6 flex items-center justify-between">
+                  <span>แผนผังที่นั่งจำลอง - {seatingTabDay === 'day1' ? 'DAY 1 (สีน้ำเงิน)' : 'DAY 2 (สีเหลือง)'}</span>
+                </h4>
+                <SeatingLayoutMap
+                  key={seatingTabDay}
+                  bookedD1Count={stats.bookedCountD1}
+                  bookedD2Count={stats.bookedCountD2}
+                  initialDay={seatingTabDay}
+                  showSelector={false}
+                />
+              </div>
             </div>
-            <button
-              onClick={() => setShowPublicStats(!showPublicStats)}
-              className={`w-12 h-6 rounded-full transition-colors relative flex items-center shrink-0 ${showPublicStats ? 'bg-blue-600' : 'bg-slate-700'}`}
-            >
-              <div className={`w-4 h-4 rounded-full bg-white absolute transition-all ${showPublicStats ? 'left-7' : 'left-1'}`} />
-            </button>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* END OF MAIN CONTENT */}
-      </main>
+          {/* SETTINGS */}
+          {activeTab === 'settings' && (
+            <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 shadow-lg max-w-2xl">
+              <h3 className="text-[13px] font-bold text-white tracking-wide border-b border-[#1e293b] pb-4 mb-4">
+                ตั้งค่าระบบ (System Settings)
+              </h3>
+              <div className="flex items-center justify-between bg-[#121b29] p-4 rounded-xl border border-[#1c2536]">
+                <div>
+                  <p className="text-sm font-bold text-slate-200">แสดงสถิติแบบเรียลไทม์บนหน้าเว็บสาธารณะ</p>
+                  <p className="text-[11px] text-slate-400 mt-1">หากเปิดใช้งาน ผู้เข้าชมเว็บไซต์ทั่วไปจะเห็นกล่อง 4 สีสรุปข้อมูล (สถิติหน้าโหลดเข้าเว็บ)</p>
+                </div>
+                <button
+                  onClick={() => setShowPublicStats(!showPublicStats)}
+                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center shrink-0 ${showPublicStats ? 'bg-blue-600' : 'bg-slate-700'}`}
+                >
+                  <div className={`w-4 h-4 rounded-full bg-white absolute transition-all ${showPublicStats ? 'left-7' : 'left-1'}`} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* END OF MAIN CONTENT */}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------
+// FLOATING COMMENTS BACKGROUND COMPONENT & HELPERS
+// ----------------------------------------------------
+interface CommentItem {
+  id: string;
+  shortText: string;
+  fullText: string;
+  createdAt: string;
+  weight: number;
+  index?: number;
+}
+
+interface ActiveMessage {
+  id: string;
+  commentId: string;
+  shortText: string;
+  fullText: string;
+  index?: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  scale: number;
+  opacity: number;
+  rotation: number;
+  layer: 'background' | 'midground' | 'foreground';
+  isHighlight: boolean;
+  color: string;
+  glow: boolean;
+  animationDelay: number;
+  animationDuration: number;
+  driftX: number;
+  driftY: number;
+  key: number;
+}
+
+interface FloatingCommentsBackgroundProps {
+  comments: CommentItem[];
+  onCommentClick: (comment: CommentItem) => void;
+}
+
+function getRandomComment(comments: CommentItem[]): CommentItem | null {
+  if (comments.length === 0) return null;
+  const totalWeight = comments.reduce((sum, c) => sum + (c.weight || 1), 0);
+  let random = Math.random() * totalWeight;
+  for (const comment of comments) {
+    const w = comment.weight || 1;
+    if (random < w) return comment;
+    random -= w;
+  }
+  return comments[comments.length - 1];
+}
+
+function getSafePosition(
+  msgWidth: number,
+  msgHeight: number,
+  containerWidth: number,
+  containerHeight: number,
+  safeZones: { left: number; right: number; top: number; bottom: number }[],
+  currentMessages: ActiveMessage[],
+  excludeSlotId?: string
+): { x: number; y: number } {
+  if (containerWidth <= 0 || containerHeight <= 0) {
+    return { x: 0, y: 0 };
+  }
+
+  const isMobile = containerWidth < 768;
+  const safeZonePadding = isMobile ? 5 : 15;
+  const msgPadding = isMobile ? 10 : 30; // strict space between messages
+
+  let bestX = Math.random() * (containerWidth - msgWidth);
+  let bestY = Math.random() * (containerHeight - msgHeight);
+  let maxMinDistFound = -1;
+
+  for (let attempt = 0; attempt < 75; attempt++) {
+    const x = Math.random() * (containerWidth - msgWidth);
+    const y = Math.random() * (containerHeight - msgHeight);
+
+    // Check overlap with safe zones
+    const overlapsSafeZone = safeZones.some(zone => {
+      return !(
+        x + msgWidth < zone.left - safeZonePadding ||
+        x > zone.right + safeZonePadding ||
+        y + msgHeight < zone.top - safeZonePadding ||
+        y > zone.bottom + safeZonePadding
+      );
+    });
+
+    if (overlapsSafeZone) continue;
+
+    // Check strict rectangular collision with other active messages
+    let minD = Infinity;
+    const collides = currentMessages.some(other => {
+      if (excludeSlotId && other.id === excludeSlotId) return false;
+
+      // Bounding box overlap check
+      const overlaps = !(
+        x + msgWidth < other.x - msgPadding ||
+        x > other.x + other.width + msgPadding ||
+        y + msgHeight < other.y - msgPadding ||
+        y > other.y + other.height + msgPadding
+      );
+
+      // Calculate center distance for fallback ranking
+      const dx = (x + msgWidth / 2) - (other.x + other.width / 2);
+      const dy = (y + msgHeight / 2) - (other.y + other.height / 2);
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < minD) minD = dist;
+
+      return overlaps;
+    });
+
+    if (!collides) {
+      return { x, y }; // Found a perfect non-overlapping spot
+    }
+
+    if (minD > maxMinDistFound) {
+      maxMinDistFound = minD;
+      bestX = x;
+      bestY = y;
+    }
+  }
+
+  // If we couldn't find a perfect spot after 75 attempts, return the one that was furthest away from others
+  return { x: bestX, y: bestY };
+}
+
+function createActiveMessage(
+  slotId: string,
+  comments: CommentItem[],
+  containerWidth: number,
+  containerHeight: number,
+  safeZones: { left: number; right: number; top: number; bottom: number }[],
+  currentMessages: ActiveMessage[],
+  isInitial: boolean
+): ActiveMessage | null {
+  const comment = getRandomComment(comments);
+  if (!comment) return null;
+
+  // Determine layer: Background (60%), Midground (30%), Foreground (10%)
+  const randLayer = Math.random();
+  let layer: 'background' | 'midground' | 'foreground' = 'background';
+  if (randLayer > 0.9) {
+    layer = 'foreground';
+  } else if (randLayer > 0.6) {
+    layer = 'midground';
+  }
+
+  // Highlight (8% chance for midground/foreground)
+  const isHighlight = layer !== 'background' && Math.random() < 0.08;
+
+  // Dimensions estimation
+  const fontSize = layer === 'background' ? 12 : layer === 'midground' ? 15 : 20;
+  const charCount = comment.shortText.length;
+  const msgWidth = charCount * fontSize * 0.55 + 24;
+  const msgHeight = fontSize * 1.2 + 16;
+
+  const { x, y } = getSafePosition(msgWidth, msgHeight, containerWidth, containerHeight, safeZones, currentMessages, slotId);
+
+  const rotation = 0; // Removed tilt as requested
+
+  // Opacity (increased for better clarity)
+  let opacity = layer === 'background' ? 0.50 + Math.random() * 0.15
+    : layer === 'midground' ? 0.75 + Math.random() * 0.10
+      : 0.85 + Math.random() * 0.10;
+  if (isHighlight) {
+    opacity = Math.min(1.0, opacity + 0.15);
+  }
+
+  // Animation duration & delay
+  const animationDuration = layer === 'background' ? 22 + Math.random() * 8
+    : layer === 'midground' ? 15 + Math.random() * 6
+      : 10 + Math.random() * 4;
+
+  const animationDelay = isInitial ? Math.random() * 12 : 0;
+
+  // Drift
+  const driftX = (Math.random() * 30 - 15) * (layer === 'background' ? 0.7 : layer === 'midground' ? 1.1 : 1.5);
+  const driftY = (Math.random() * 30 - 15) * (layer === 'background' ? 0.7 : layer === 'midground' ? 1.1 : 1.5);
+
+  // Fandom Theme Colors
+  const colors = {
+    gold: ['#fbbf24', '#f59e0b', '#facc15', '#fef08a'],
+    blue: ['#60a5fa', '#3b82f6', '#93c5fd', '#bfdbfe'],
+    purple: ['#c084fc', '#a855f7', '#d8b4fe', '#e9d5ff'],
+    pink: ['#f472b6', '#ec4899', '#fbcfe8', '#f472b6']
+  };
+
+  const themeKeys = ['gold', 'blue', 'purple', 'pink'];
+  const chosenTheme = themeKeys[Math.floor(Math.random() * themeKeys.length)];
+  const themeColors = colors[chosenTheme as keyof typeof colors];
+  const color = themeColors[Math.floor(Math.random() * themeColors.length)];
+
+  return {
+    id: slotId,
+    commentId: comment.id,
+    shortText: comment.shortText,
+    fullText: comment.fullText,
+    index: comment.index,
+    x,
+    y,
+    width: msgWidth,
+    height: msgHeight,
+    scale: layer === 'background' ? 0.85 + Math.random() * 0.05 : layer === 'midground' ? 0.95 + Math.random() * 0.05 : 1.05 + Math.random() * 0.08,
+    opacity,
+    rotation,
+    layer,
+    isHighlight,
+    color,
+    glow: isHighlight || layer === 'foreground',
+    animationDelay,
+    animationDuration,
+    driftX,
+    driftY,
+    key: Math.random()
+  };
+}
+
+function FloatingCommentsBackground({ comments, onCommentClick }: FloatingCommentsBackgroundProps) {
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const [containerSize, setContainerSize] = React.useState({ width: 0, height: 0 });
+  const [activeMessages, setActiveMessages] = React.useState<ActiveMessage[]>([]);
+  const [isTouchDevice, setIsTouchDevice] = React.useState(false);
+  const [isInView, setIsInView] = React.useState(true);
+  const [isTabActive, setIsTabActive] = React.useState(true);
+
+  // Detect touch device
+  React.useEffect(() => {
+    const touchQuery = window.matchMedia('(pointer: coarse)');
+    setIsTouchDevice(touchQuery.matches);
+    const listener = (e: MediaQueryListEvent) => setIsTouchDevice(e.matches);
+    touchQuery.addEventListener('change', listener);
+    return () => touchQuery.removeEventListener('change', listener);
+  }, []);
+
+  // Intersection Observer for Viewport Detection
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { threshold: 0.05 }
+    );
+
+    observer.observe(container);
+    return () => {
+      if (container) observer.unobserve(container);
+    };
+  }, []);
+
+  // Tab Visibility Detection
+  React.useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsTabActive(document.visibilityState === 'visible');
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  // Track Container Size with ResizeObserver
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        setContainerSize({ width, height });
+      }
+    });
+
+    observer.observe(container);
+    return () => {
+      if (container) observer.unobserve(container);
+    };
+  }, []);
+
+  // Determine slot count based on width
+  const targetSlotCount = React.useMemo(() => {
+    if (containerSize.width === 0) return 0;
+    if (containerSize.width >= 1024) return 24; // Desktop
+    if (containerSize.width >= 768) return 14;  // Tablet
+    return 4;                                  // Mobile
+  }, [containerSize.width]);
+
+  // Helper: Get Safe Zones
+  const getSafeZonesList = React.useCallback(() => {
+    if (!containerRef.current) return [];
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const selectors = ['#hero-title', '#hero-subtitle', '#hero-ctas', '#hero-images', '#lang-switcher', '#wall-header'];
+    const zones: { left: number; right: number; top: number; bottom: number }[] = [];
+
+    selectors.forEach(selector => {
+      const el = document.querySelector(selector);
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        if (
+          rect.right > containerRect.left &&
+          rect.left < containerRect.right &&
+          rect.bottom > containerRect.top &&
+          rect.top < containerRect.bottom
+        ) {
+          zones.push({
+            left: rect.left - containerRect.left,
+            right: rect.right - containerRect.left,
+            top: rect.top - containerRect.top,
+            bottom: rect.bottom - containerRect.top
+          });
+        }
+      }
+    });
+
+    return zones;
+  }, []);
+
+  // Initialize and maintain slots
+  React.useEffect(() => {
+    if (comments.length === 0 || containerSize.width === 0 || containerSize.height === 0) {
+      setActiveMessages([]);
+      return;
+    }
+
+    const safeZones = getSafeZonesList();
+
+    setActiveMessages(prev => {
+      let updated = [...prev];
+      updated = updated.filter(m => m.x < containerSize.width && m.y < containerSize.height);
+
+      if (updated.length > targetSlotCount) {
+        updated = updated.slice(0, targetSlotCount);
+      } else if (updated.length < targetSlotCount) {
+        const needed = targetSlotCount - updated.length;
+        for (let i = 0; i < needed; i++) {
+          const slotId = `slot-${Date.now()}-${Math.random()}`;
+          const newMsg = createActiveMessage(slotId, comments, containerSize.width, containerSize.height, safeZones, updated, true);
+          if (newMsg) updated.push(newMsg);
+        }
+      }
+
+      return updated;
+    });
+  }, [comments, targetSlotCount, containerSize, getSafeZonesList]);
+
+  // Handle message animation end
+  const handleMessageEnd = React.useCallback((slotId: string) => {
+    if (comments.length === 0 || containerSize.width === 0 || containerSize.height === 0) return;
+
+    const safeZones = getSafeZonesList();
+
+    setActiveMessages(prev => {
+      const index = prev.findIndex(m => m.id === slotId);
+      if (index === -1) return prev;
+
+      const updated = [...prev];
+      const newMsg = createActiveMessage(slotId, comments, containerSize.width, containerSize.height, safeZones, prev, false);
+      if (newMsg) {
+        updated[index] = newMsg;
+      }
+      return updated;
+    });
+  }, [comments, containerSize, getSafeZonesList]);
+
+  // Mouse Move Parallax Handler
+  const handleMouseMove = React.useCallback((e: React.MouseEvent) => {
+    if (!containerRef.current || isTouchDevice) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+
+    containerRef.current.style.setProperty('--mouse-x', x.toString());
+    containerRef.current.style.setProperty('--mouse-y', y.toString());
+  }, [isTouchDevice]);
+
+  const bgMessages = React.useMemo(() => activeMessages.filter(m => m.layer === 'background'), [activeMessages]);
+  const midMessages = React.useMemo(() => activeMessages.filter(m => m.layer === 'midground'), [activeMessages]);
+  const fgMessages = React.useMemo(() => activeMessages.filter(m => m.layer === 'foreground'), [activeMessages]);
+
+  const renderMessage = (msg: ActiveMessage) => {
+    return (
+      <button
+        key={`${msg.id}-${msg.key}`}
+        onAnimationEnd={() => handleMessageEnd(msg.id)}
+        onClick={() => onCommentClick({
+          id: msg.commentId,
+          shortText: msg.shortText,
+          fullText: msg.fullText,
+          createdAt: '',
+          weight: 1,
+          index: msg.index
+        })}
+        className="absolute animate-float-message cursor-pointer select-none text-left rounded-2xl px-3 py-2 md:px-4 md:py-2.5 border transition-all duration-300 pointer-events-auto backdrop-blur-[1px] hover:z-50"
+        style={{
+          left: `${msg.x}px`,
+          top: `${msg.y}px`,
+          scale: msg.scale,
+          color: msg.color,
+          borderColor: `${msg.color}20`,
+          backgroundColor: `${msg.color}08`,
+          fontSize: `${msg.layer === 'background' ? (containerSize.width < 768 ? 10 : 12) : msg.layer === 'midground' ? (containerSize.width < 768 ? 12 : 14) : (containerSize.width < 768 ? 15 : 17)}px`,
+          fontWeight: msg.isHighlight ? '800' : '500',
+          textShadow: msg.glow ? `0 0 8px ${msg.color}60` : 'none',
+          boxShadow: msg.isHighlight ? `inset 0 0 10px ${msg.color}15, 0 4px 14px rgba(0,0,0,0.4)` : '0 2px 8px rgba(0,0,0,0.3)',
+          '--drift-x': `${msg.driftX}px`,
+          '--drift-y': `${msg.driftY}px`,
+          '--target-opacity': msg.opacity,
+          '--duration': `${msg.animationDuration}s`,
+          '--delay': `${msg.animationDelay}s`,
+          '--rotate-start': `0deg`,
+          '--rotate-mid': `0deg`,
+          '--rotate-end': `0deg`,
+          '--blur-amount': msg.layer === 'background' ? '0.5px' : '0px',
+          animationDuration: 'var(--duration)',
+          animationDelay: 'var(--delay)',
+        } as React.CSSProperties}
+      >
+        {msg.shortText}
+      </button>
+    );
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      className={`absolute inset-0 z-0 overflow-hidden pointer-events-none ${(!isInView || !isTabActive) ? 'paused-animations' : ''}`}
+      style={{
+        '--mouse-x': '0',
+        '--mouse-y': '0'
+      } as React.CSSProperties}
+    >
+      {/* Background Layer */}
+      <div
+        className="absolute inset-0 transition-transform duration-500 ease-out pointer-events-none"
+        style={{
+          transform: isTouchDevice ? 'none' : 'translate3d(calc(var(--mouse-x) * -3px), calc(var(--mouse-y) * -3px), 0)'
+        }}
+      >
+        {bgMessages.map(renderMessage)}
+      </div>
+
+      {/* Midground Layer */}
+      <div
+        className="absolute inset-0 transition-transform duration-500 ease-out pointer-events-none"
+        style={{
+          transform: isTouchDevice ? 'none' : 'translate3d(calc(var(--mouse-x) * -6px), calc(var(--mouse-y) * -6px), 0)'
+        }}
+      >
+        {midMessages.map(renderMessage)}
+      </div>
+
+      {/* Foreground Layer */}
+      <div
+        className="absolute inset-0 transition-transform duration-500 ease-out pointer-events-none"
+        style={{
+          transform: isTouchDevice ? 'none' : 'translate3d(calc(var(--mouse-x) * -12px), calc(var(--mouse-y) * -12px), 0)'
+        }}
+      >
+        {fgMessages.map(renderMessage)}
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------
+// GLASSMORPHISM COMMENT POPUP MODAL
+// ----------------------------------------------------
+interface CommentPopupProps {
+  isOpen: boolean;
+  comment: CommentItem | null;
+  onClose: () => void;
+}
+
+function CommentPopup({ isOpen, comment, onClose }: CommentPopupProps) {
+  const { t } = useTranslation();
+  const closeButtonRef = React.useRef<HTMLButtonElement | null>(null);
+
+  // ESC Key Listener
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  // Focus Close Button on Mount
+  React.useEffect(() => {
+    if (isOpen && closeButtonRef.current) {
+      closeButtonRef.current.focus();
+    }
+  }, [isOpen]);
+
+  if (!isOpen || !comment) return null;
+
+  // URL Detector
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const hasLink = urlRegex.test(comment.fullText);
+  const links = comment.fullText.match(urlRegex);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-300"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="comment-popup-title"
+    >
+      <div
+        className="bg-[#0b1329]/65 backdrop-blur-2xl border border-white/10 rounded-[28px] w-full max-w-lg p-7 md:p-9 shadow-2xl relative transform transition-all duration-300 scale-100 animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <button
+          ref={closeButtonRef}
+          onClick={onClose}
+          aria-label={t('popup_btn_close') || 'Close'}
+          className="absolute top-5 right-5 text-slate-400 hover:text-white hover:bg-white/10 p-1.5 rounded-full cursor-pointer transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-5 border-b border-white/5 pb-4">
+          <div className="p-2 bg-gradient-to-br from-amber-500/25 to-purple-600/25 text-[#f3ce48] rounded-xl border border-amber-500/20 shadow-inner">
+            <Mail className="w-5 h-5 text-[#f3ce48]" />
+          </div>
+          <h3 id="comment-popup-title" className="text-base font-bold text-transparent bg-gradient-to-r from-[#fbbf24] to-[#a855f7] bg-clip-text">
+            {comment.index ? `ฉบับที่ ${comment.index}` : 'จดหมาย'}
+          </h3>
+        </div>
+
+        {/* Content */}
+        <div className="text-slate-200 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-medium break-words py-2 max-h-[50vh] overflow-y-auto pr-2 scrollbar-thin">
+          {comment.fullText}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="mt-6 pt-4 border-t border-white/5 flex flex-col sm:flex-row items-center justify-end gap-3">
+          {hasLink && links && links.map((url, i) => (
+            <a
+              key={i}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl px-4 py-2.5 flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>{t('popup_btn_open_link')}</span>
+            </a>
+          ))}
+
+          <button
+            onClick={onClose}
+            className="w-full sm:w-auto bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold text-xs rounded-xl px-5 py-2.5 transition-all border border-white/5 text-center cursor-pointer"
+          >
+            {t('popup_btn_close')}
+          </button>
+        </div>
       </div>
     </div>
   );

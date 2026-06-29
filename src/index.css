@@ -126,3 +126,48 @@ body {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
+
+/* Floating message animation using CSS variables for high performance */
+@keyframes float-message {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.9) rotate(var(--rotate-start));
+    filter: blur(var(--blur-amount));
+  }
+  10% {
+    opacity: var(--target-opacity);
+    transform: translate3d(calc(var(--drift-x) * 0.1), calc(var(--drift-y) * 0.1), 0) scale(1) rotate(var(--rotate-mid));
+    filter: blur(var(--blur-amount));
+  }
+  95% {
+    opacity: var(--target-opacity);
+    transform: translate3d(calc(var(--drift-x) * 0.95), calc(var(--drift-y) * 0.95), 0) scale(1) rotate(var(--rotate-mid));
+    filter: blur(var(--blur-amount));
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--drift-x), var(--drift-y), 0) scale(0.9) rotate(var(--rotate-end));
+    filter: blur(var(--blur-amount));
+  }
+}
+
+.animate-float-message {
+  animation-name: float-message;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: forwards;
+  transition: scale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+}
+
+.animate-float-message:hover {
+  scale: 1.03 !important;
+  opacity: 1 !important;
+  filter: blur(0px) !important;
+  box-shadow: 0 0 16px currentColor;
+  z-index: 50;
+}
+
+/* Pause animations when tab is inactive or out of view */
+.paused-animations .animate-float-message {
+  animation-play-state: paused !important;
+}
+
