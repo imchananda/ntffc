@@ -598,8 +598,12 @@ function App() {
           </div>
         </div>
 
-        {/* CORE WRAPPER - Centered in max-w-6xl */}
-        <main className="flex-1 max-w-6xl w-full mx-auto px-6 md:px-12 py-6 space-y-12 mt-12 md:mt-4">
+        {/* CORE WRAPPER - Centered in max-w-6xl, wider for admin */}
+        <main className={`flex-1 w-full mx-auto py-6 space-y-12 mt-12 md:mt-4 ${
+          currentView === 'admin' 
+            ? 'max-w-[1440px] px-4 md:px-8' 
+            : 'max-w-6xl px-6 md:px-12'
+        }`}>
         {currentView === "admin" ? (
           <AdminDashboardView
             stats={stats}
@@ -1928,7 +1932,7 @@ function AdminDashboardView({
             <Lock className="w-5 h-5 animate-pulse" />
           </div>
           <h2 className="text-base font-extrabold text-white">ระบบตรวจสอบสิทธิ์ Admin</h2>
-          <p className="text-xs text-slate-455">กรุณาระบุรหัสผ่านเข้าใช้แอดมินเพื่อถอดรหัสอ่านสถิติ</p>
+          <p className="text-xs text-slate-400">กรุณาระบุรหัสผ่านเข้าใช้แอดมินเพื่อถอดรหัสอ่านสถิติ</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4 mt-6">
@@ -2095,8 +2099,10 @@ function AdminDashboardView({
             <span className="text-xs text-slate-300 font-bold">ผู้ตอบแบบสำรวจทั้งหมด</span>
           </div>
           <div className="relative z-10">
-            <strong className="text-3xl font-black text-blue-400 block tracking-tight">{stats.totalResponses.toLocaleString()}</strong>
-            <span className="text-xs text-slate-400">คน</span>
+            <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+              <strong className="text-3xl font-black text-blue-400 tracking-tight">{stats.totalResponses.toLocaleString()}</strong>
+              <span className="text-xs text-slate-400 font-medium">คน</span>
+            </div>
           </div>
         </div>
 
@@ -2108,29 +2114,41 @@ function AdminDashboardView({
             <span className="text-xs text-slate-300 font-bold">ผู้มีแผนเข้าร่วมงาน</span>
           </div>
           <div className="relative z-10">
-            <strong className="text-3xl font-black text-emerald-400 block tracking-tight">{stats.totalAttending.toLocaleString()}</strong>
-            <span className="text-xs text-slate-400">คน <span className="text-emerald-500 ml-1">({stats.totalResponses > 0 ? ((stats.totalAttending / stats.totalResponses) * 100).toFixed(2) : 0}%)</span></span>
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <strong className="text-3xl font-black text-emerald-400 tracking-tight">{stats.totalAttending.toLocaleString()}</strong>
+              <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                คน <span className="text-emerald-500 ml-1">({stats.totalResponses > 0 ? ((stats.totalAttending / stats.totalResponses) * 100).toFixed(2) : 0}%)</span>
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Card 3: Orange (Undecided) */}
         <div className="bg-[#241a15] border border-[#78350f] rounded-2xl p-5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-650/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
           <div className="flex items-center gap-2 mb-3 relative z-10">
             <div className="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg"><HelpCircle className="w-3.5 h-3.5" /></div>
             <span className="text-xs text-slate-300 font-bold">ผู้ยังไม่แน่ใจ</span>
           </div>
           <div className="relative z-10">
-            <strong className="text-3xl font-black text-orange-450 block tracking-tight">{(stats.planCounts?.["Not sure yet"] || 0).toLocaleString()}</strong>
-            <div className="flex flex-wrap items-center justify-between mt-1.5 text-[10px] text-slate-450 gap-x-2 gap-y-0.5">
-              <span>DAY 1: <span className="text-orange-300 font-bold">{(stats.undecidedCountD1 || 0).toLocaleString()} คน</span></span>
-              <span>|</span>
-              <span>DAY 2: <span className="text-orange-300 font-bold">{(stats.undecidedCountD2 || 0).toLocaleString()} คน</span></span>
+            <div className="flex items-baseline gap-1.5 mb-2">
+              <strong className="text-3xl font-black text-orange-400 tracking-tight">{(stats.planCounts?.["Not sure yet"] || 0).toLocaleString()}</strong>
+              <span className="text-xs text-slate-400 font-medium">คน</span>
+            </div>
+            <div className="space-y-1 text-[11px] text-slate-400 border-t border-orange-500/10 pt-2 mt-1">
+              <div className="flex justify-between items-center whitespace-nowrap">
+                <span>DAY 1:</span>
+                <span className="text-orange-300 font-bold">{(stats.undecidedCountD1 || 0).toLocaleString()} คน</span>
+              </div>
+              <div className="flex justify-between items-center whitespace-nowrap">
+                <span>DAY 2:</span>
+                <span className="text-orange-300 font-bold">{(stats.undecidedCountD2 || 0).toLocaleString()} คน</span>
+              </div>
               {stats.undecidedCountNone && stats.undecidedCountNone > 0 ? (
-                <>
-                  <span>|</span>
-                  <span className="text-slate-400">ยังไม่เลือกวัน: <span className="text-slate-300 font-bold">{stats.undecidedCountNone.toLocaleString()} คน</span></span>
-                </>
+                <div className="flex justify-between items-center whitespace-nowrap">
+                  <span>ยังไม่เลือกวัน:</span>
+                  <span className="text-slate-300 font-bold">{stats.undecidedCountNone.toLocaleString()} คน</span>
+                </div>
               ) : null}
             </div>
           </div>
@@ -2144,11 +2162,11 @@ function AdminDashboardView({
             <span className="text-xs text-slate-300 font-bold">ที่นั่งถูกจองแล้ว DAY 1</span>
           </div>
           <div className="relative z-10">
-            <div className="flex items-baseline gap-1">
+            <div className="flex items-baseline gap-1.5 whitespace-nowrap">
               <strong className="text-3xl font-black text-purple-400 tracking-tight">{stats.bookedCountD1.toLocaleString()}</strong>
-              <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()}</span>
+              <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()} ที่นั่ง</span>
             </div>
-            <div className="flex items-center justify-between mt-1 text-xs">
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-purple-500/10 text-[11px] whitespace-nowrap">
               <span className="text-purple-400 font-bold">{((stats.bookedCountD1 / CAPACITY) * 100).toFixed(2)}%</span>
               <span className="text-slate-400">คิวสำรอง: <span className="text-purple-300 font-bold">{(stats.waitlistCountD1 || 0).toLocaleString()} คน</span></span>
             </div>
@@ -2163,11 +2181,11 @@ function AdminDashboardView({
             <span className="text-xs text-slate-300 font-bold">ที่นั่งถูกจองแล้ว DAY 2</span>
           </div>
           <div className="relative z-10">
-            <div className="flex items-baseline gap-1">
+            <div className="flex items-baseline gap-1.5 whitespace-nowrap">
               <strong className="text-3xl font-black text-amber-400 tracking-tight">{stats.bookedCountD2.toLocaleString()}</strong>
-              <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()}</span>
+              <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()} ที่นั่ง</span>
             </div>
-            <div className="flex items-center justify-between mt-1 text-xs">
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-amber-500/10 text-[11px] whitespace-nowrap">
               <span className="text-amber-400 font-bold">{((stats.bookedCountD2 / CAPACITY) * 100).toFixed(2)}%</span>
               <span className="text-slate-400">คิวสำรอง: <span className="text-amber-300 font-bold">{(stats.waitlistCountD2 || 0).toLocaleString()} คน</span></span>
             </div>
@@ -2480,7 +2498,7 @@ function AdminDashboardView({
                       <td className="py-3.5 px-4 text-blue-400 text-[11px]">{f.priceD1 || "-"}</td>
                       <td className="py-3.5 px-4 text-amber-500 text-[11px]">{f.priceD2 || "-"}</td>
                       <td className="py-3.5 px-4 text-slate-400 text-[11px] font-sans">{f.origin || "-"}</td>
-                      <td className="py-3.5 px-4 text-slate-450 text-[10px]">{new Date(f.timestamp).toLocaleString("th-TH")}</td>
+                      <td className="py-3.5 px-4 text-slate-400 text-[10px]">{new Date(f.timestamp).toLocaleString("th-TH")}</td>
                       <td className="py-3.5 px-4 text-slate-400 max-w-[200px] sm:max-w-md overflow-hidden text-ellipsis leading-relaxed font-sans">{f.comments || "-"}</td>
                     </tr>
                   ))
