@@ -1791,8 +1791,7 @@ function AdminDashboardView({
   isRefreshing,
   showPublicStats,
   setShowPublicStats,
-  serverError,
-  apiMode
+  serverError
 }: {
   stats: StatsData;
   apiMode?: "mock" | "live";
