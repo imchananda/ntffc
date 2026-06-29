@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Ticket,
-  MapPin,
-  TrendingUp,
   MessageSquare,
   Download,
   RefreshCw,
@@ -2204,9 +2202,6 @@ function AdminDashboardView({
           
           <div className="pt-5 pb-2 px-3 text-[9px] font-bold uppercase tracking-wider text-slate-600">ข้อมูลการตอบแบบสำรวจ</div>
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('responses'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'responses' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ผู้ตอบแบบสำรวจ</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('undecided'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'undecided' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ผู้ที่ยังไม่แน่ใจ</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('demographics'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'demographics' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MapPin className="w-4 h-4" /> แหล่งที่มาของผู้เข้าร่วม</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('prices'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'prices' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><TrendingUp className="w-4 h-4" /> ความสนใจบัตร</a>
           
           <div className="pt-5 pb-2 px-3 text-[9px] font-bold uppercase tracking-wider text-slate-600">ที่นั่งและผังคอนเสิร์ต</div>
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('seatingD1'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'seatingD1' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><LayoutGrid className="w-4 h-4" /> ผังที่นั่ง DAY 1</a>
