@@ -1076,17 +1076,19 @@ function SeatingLayoutMap({ bookedD1Count, bookedD2Count, initialDay = "day1", s
           </div>
         )}
         
-        <div className={`text-xs text-slate-400 font-medium flex flex-wrap items-center bg-slate-950/80 px-4 py-2 border border-slate-850 rounded-xl min-w-[200px] justify-center ${!showSelector ? 'w-full sm:w-auto' : ''}`}>
-          {hoveredSeat ? (
-            <span className="flex items-center gap-2">
-              <span className={`w-3 h-3 rounded-full ${hoveredSeat.status === 'BOOKED' ? (selectedDay === 'day1' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]' : 'bg-[#facc15] shadow-[0_0_8px_rgba(250,204,21,0.8)]') : 'bg-slate-600'}`}></span>
-              <strong className="text-sm">{t('map_zone')} {hoveredSeat.zone}</strong> <span className="mx-1 text-slate-600">|</span> 
-              <span className="text-slate-300">{t('map_zone_total')} {hoveredSeat.zoneTotal} {t('map_seat_unit')}</span>
-            </span>
-          ) : (
-            <span>{t('map_hover_hint')}</span>
-          )}
-        </div>
+        {(!showSelector && !hoveredSeat) ? null : (
+          <div className={`text-xs text-slate-400 font-medium flex flex-wrap items-center bg-slate-950/80 px-4 py-2 border border-slate-850 rounded-xl min-w-[200px] justify-center ${!showSelector ? 'w-full sm:w-auto' : ''}`}>
+            {hoveredSeat ? (
+              <span className="flex items-center gap-2">
+                <span className={`w-3 h-3 rounded-full ${hoveredSeat.status === 'BOOKED' ? (selectedDay === 'day1' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]' : 'bg-[#facc15] shadow-[0_0_8px_rgba(250,204,21,0.8)]') : 'bg-slate-600'}`}></span>
+                <strong className="text-sm">{t('map_zone')} {hoveredSeat.zone}</strong> <span className="mx-1 text-slate-600">|</span> 
+                <span className="text-slate-300">{t('map_zone_total')} {hoveredSeat.zoneTotal} {t('map_seat_unit')}</span>
+              </span>
+            ) : (
+              <span>{t('map_hover_hint')}</span>
+            )}
+          </div>
+        )}
       </div>
 
       <div ref={containerRef} className="w-full bg-slate-950 border border-slate-900 rounded-2xl overflow-hidden py-4 relative shadow-inner">
@@ -3001,7 +3003,6 @@ function AdminDashboardView({
           <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 shadow-lg">
             <h4 className="text-xs font-bold text-white tracking-wide border-b border-[#1e293b] pb-4 mb-6 flex items-center justify-between">
               <span>แผนผังที่นั่งจำลอง - {seatingTabDay === 'day1' ? 'DAY 1 (สีน้ำเงิน)' : 'DAY 2 (สีเหลือง)'}</span>
-              <span className="text-[10px] text-slate-500 font-normal">เลื่อนเมาส์เพื่อดูสถิติแยกตามโซน</span>
             </h4>
             <SeatingLayoutMap 
               key={seatingTabDay} 
