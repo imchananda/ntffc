@@ -18,6 +18,7 @@ import {
   Globe,
   HelpCircle,
   Menu,
+  LogOut,
   X
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -1859,6 +1860,11 @@ function AdminDashboardView({
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
     return localStorage.getItem("ntf_admin_auth") === "true";
   });
+
+  const handleLogout = () => {
+    localStorage.removeItem("ntf_admin_auth");
+    setIsAdminAuthenticated(false);
+  };
   const [passwordInput, setPasswordInput] = useState("");
   const [passError, setPassError] = useState(false);
   const [feedbackSearch, setFeedbackSearch] = useState("");
@@ -2290,17 +2296,27 @@ function AdminDashboardView({
           
           <div className="pt-5 pb-2 px-3 text-[9px] font-bold uppercase tracking-wider text-slate-600">ตั้งค่า</div>
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('settings'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><Lock className="w-4 h-4" /> ตั้งค่าระบบ</a>
+          
+          <div className="mt-4 pt-4 border-t border-[#1c2536] flex items-center justify-between px-3 gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shrink-0">
+                <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
+              </div>
+              <div className="leading-none">
+                <p className="text-[10px] font-bold text-white">Admin</p>
+                <p className="text-[9px] text-slate-500 mt-0.5">ผู้ดูแลระบบ</p>
+              </div>
+            </div>
+            
+            <button
+              onClick={handleLogout}
+              className="p-1.5 hover:bg-rose-500/15 text-slate-500 hover:text-rose-400 rounded-lg transition-all cursor-pointer border border-transparent hover:border-rose-500/20"
+              title="ออกจากระบบ"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </nav>
-        
-        <div className="mt-auto pt-6 pb-2 border-t border-[#1c2536] flex items-center gap-3 px-3">
-          <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
-            <ShieldCheck className="w-4 h-4 text-slate-400" />
-          </div>
-          <div className="leading-tight">
-            <p className="text-[11px] font-bold text-white">Admin</p>
-            <p className="text-[9px] text-slate-500">ผู้ดูแลระบบ</p>
-          </div>
-        </div>
       </aside>
 
       {/* MAIN CONTENT CONTAINER */}
