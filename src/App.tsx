@@ -1862,6 +1862,7 @@ function AdminDashboardView({
   const [filterPrice, setFilterPrice] = useState("all");
   const [filterHasComment, setFilterHasComment] = useState("all");
   const [sortBy, setSortBy] = useState("newest"); // newest, oldest, name-asc, name-desc
+  const [seatingTabDay, setSeatingTabDay] = useState<"day1" | "day2">("day1");
 
   const normalizeOrigin = (origin: string): string => {
     const org = String(origin || "").trim();
@@ -2204,8 +2205,7 @@ function AdminDashboardView({
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('feedbacks'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'feedbacks' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ความคิดเห็น & ข้อเสนอแนะ</a>
           
           <div className="pt-5 pb-2 px-3 text-[9px] font-bold uppercase tracking-wider text-slate-600">ที่นั่งและผังคอนเสิร์ต</div>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('seatingD1'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'seatingD1' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><LayoutGrid className="w-4 h-4" /> ผังที่นั่ง DAY 1</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('seatingD2'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'seatingD2' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><LayoutGrid className="w-4 h-4" /> ผังที่นั่ง DAY 2</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('seating'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'seating' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><LayoutGrid className="w-4 h-4" /> ผังที่นั่ง</a>
           
           <div className="pt-5 pb-2 px-3 text-[9px] font-bold uppercase tracking-wider text-slate-600">ตั้งค่า</div>
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('settings'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><Lock className="w-4 h-4" /> ตั้งค่าระบบ</a>
@@ -2921,23 +2921,88 @@ function AdminDashboardView({
         </div>
       )}
 
-      {/* SEATING MAP DAY 1 */}
-      {activeTab === 'seatingD1' && (
-        <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 shadow-lg">
-          <h3 className="text-[13px] font-bold text-white tracking-wide border-b border-[#1e293b] pb-4 mb-4">
-            ผังที่นั่ง DAY 1
-          </h3>
-          <SeatingLayoutMap key="d1" bookedD1Count={stats.bookedCountD1} bookedD2Count={stats.bookedCountD2} initialDay="day1" />
-        </div>
-      )}
+      {/* SEATING MAP */}
+      {activeTab === 'seating' && (
+        <div className="space-y-6">
+          {/* DAY SELECTOR & HEADER */}
+          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 shadow-lg flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-bold text-white tracking-wide">
+                รายงานความจุและผังที่นั่ง (Seating Capacity & Layout)
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-1">
+                แสดงข้อมูลสถิติการจองและตำแหน่งที่นั่งของแต่ละวัน
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSeatingTabDay("day1")}
+                className={`px-5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                  seatingTabDay === "day1"
+                    ? "bg-blue-500/20 text-blue-400 border-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.2)] font-extrabold"
+                    : "bg-slate-950 border-[#1e293b] text-slate-400 hover:text-white hover:bg-slate-900"
+                }`}
+              >
+                DAY 1 (วันเสาร์)
+              </button>
+              <button
+                onClick={() => setSeatingTabDay("day2")}
+                className={`px-5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                  seatingTabDay === "day2"
+                    ? "bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.2)] font-extrabold"
+                    : "bg-slate-950 border-[#1e293b] text-slate-400 hover:text-white hover:bg-slate-900"
+                }`}
+              >
+                DAY 2 (วันอาทิตย์)
+              </button>
+            </div>
+          </div>
 
-      {/* SEATING MAP DAY 2 */}
-      {activeTab === 'seatingD2' && (
-        <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 shadow-lg">
-          <h3 className="text-[13px] font-bold text-white tracking-wide border-b border-[#1e293b] pb-4 mb-4">
-            ผังที่นั่ง DAY 2
-          </h3>
-          <SeatingLayoutMap key="d2" bookedD1Count={stats.bookedCountD1} bookedD2Count={stats.bookedCountD2} initialDay="day2" />
+          {/* OVERVIEW STATS CARDS FOR SELECTED DAY */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Booked Card */}
+            <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 relative overflow-hidden shadow-lg">
+              <div className={`absolute top-0 right-0 w-24 h-24 blur-3xl -mr-8 -mt-8 rounded-full ${
+                seatingTabDay === 'day1' ? 'bg-blue-500/10' : 'bg-amber-500/10'
+              }`}></div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ที่นั่งถูกจองแล้ว</p>
+              <p className="text-2xl font-black text-white mt-2 font-mono">
+                {seatingTabDay === 'day1' ? stats.bookedCountD1 : stats.bookedCountD2} <span className="text-xs font-normal text-slate-400">ที่นั่ง</span>
+              </p>
+            </div>
+
+            {/* Available Card */}
+            <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 relative overflow-hidden shadow-lg">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ที่นั่งว่างคงเหลือ</p>
+              <p className="text-2xl font-black text-white mt-2 font-mono">
+                {CAPACITY - (seatingTabDay === 'day1' ? stats.bookedCountD1 : stats.bookedCountD2)} <span className="text-xs font-normal text-slate-400">ที่นั่ง</span>
+              </p>
+            </div>
+
+            {/* Percent Card */}
+            <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 relative overflow-hidden shadow-lg">
+              <div className="absolute top-0 right-0 w-24 h-24 blur-3xl -mr-8 -mt-8 rounded-full bg-emerald-500/5"></div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">อัตราการจอง</p>
+              <p className="text-2xl font-black text-emerald-400 mt-2 font-mono">
+                {(((seatingTabDay === 'day1' ? stats.bookedCountD1 : stats.bookedCountD2) / CAPACITY) * 100).toFixed(1)}%
+              </p>
+            </div>
+          </div>
+
+          {/* SEATING MAP */}
+          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 shadow-lg">
+            <h4 className="text-xs font-bold text-white tracking-wide border-b border-[#1e293b] pb-4 mb-6 flex items-center justify-between">
+              <span>แผนผังที่นั่งจำลอง - {seatingTabDay === 'day1' ? 'DAY 1 (สีน้ำเงิน)' : 'DAY 2 (สีเหลือง)'}</span>
+              <span className="text-[10px] text-slate-500 font-normal">เลื่อนเมาส์เพื่อดูสถิติแยกตามโซน</span>
+            </h4>
+            <SeatingLayoutMap 
+              key={seatingTabDay} 
+              bookedD1Count={stats.bookedCountD1} 
+              bookedD2Count={stats.bookedCountD2} 
+              initialDay={seatingTabDay} 
+            />
+          </div>
         </div>
       )}
 
