@@ -1885,6 +1885,11 @@ function AdminDashboardView({
   const [filterHasComment, setFilterHasComment] = useState("all");
   const [sortBy, setSortBy] = useState("newest"); // newest, oldest, name-asc, name-desc
   const [seatingTabDay, setSeatingTabDay] = useState<"day1" | "day2">("day1");
+  const [responsesPage, setResponsesPage] = useState(1);
+
+  useEffect(() => {
+    setResponsesPage(1);
+  }, [respSearch, filterAttending, filterOrigin, filterDays, filterPrice, filterHasComment, sortBy]);
 
   const normalizeOrigin = (origin: string): string => {
     const org = String(origin || "").trim();
@@ -1984,6 +1989,13 @@ function AdminDashboardView({
     
     return result;
   }, [stats.allResponses, respSearch, filterAttending, filterOrigin, filterDays, filterPrice, filterHasComment, sortBy]);
+
+  const RESPONSES_PER_PAGE = 20;
+  const totalResponsesPages = Math.ceil(filteredResponses.length / RESPONSES_PER_PAGE);
+  const paginatedResponses = useMemo(() => {
+    const startIndex = (responsesPage - 1) * RESPONSES_PER_PAGE;
+    return filteredResponses.slice(startIndex, startIndex + RESPONSES_PER_PAGE);
+  }, [filteredResponses, responsesPage]);
 
   const seatingDayStats = useMemo(() => {
     if (!stats.allResponses) {
@@ -3174,10 +3186,12 @@ function AdminDashboardView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1e293b]/50 bg-slate-900/10">
-                {filteredResponses.length > 0 ? (
-                  filteredResponses.map((r, i) => (
+                {paginatedResponses.length > 0 ? (
+                  paginatedResponses.map((r, i) => (
                     <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
-                      <td className="py-3.5 px-4 text-center text-slate-500 font-mono">{i + 1}</td>
+                      <td className="py-3.5 px-4 text-center text-slate-500 font-mono">
+                        {(responsesPage - 1) * RESPONSES_PER_PAGE + i + 1}
+                      </td>
                       <td className="py-3.5 px-4 text-slate-400 text-[10px] font-mono">
                         {r.timestamp ? new Date(r.timestamp).toLocaleString("th-TH", { dateStyle: 'short', timeStyle: 'short' }) : "-"}
                       </td>
@@ -3221,6 +3235,57 @@ function AdminDashboardView({
               </tbody>
             </table>
           </div>
+
+          {/* PAGINATION CONTROLS */}
+          {totalResponsesPages > 1 && (
+            <div className="flex flex-wrap items-center justify-between border-t border-[#1e293b]/50 pt-4 mt-4 gap-4">
+              <span className="text-xs text-slate-400">
+                แสดงผล {(responsesPage - 1) * RESPONSES_PER_PAGE + 1} - {Math.min(responsesPage * RESPONSES_PER_PAGE, filteredResponses.length)} จากทั้งหมด {filteredResponses.length} รายการ
+              </span>
+              
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setResponsesPage(prev => Math.max(prev - 1, 1))}
+                  disabled={responsesPage === 1}
+                  className="p-1.5 border border-[#1e293b] rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-all cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                
+                {Array.from({ length: Math.min(5, totalResponsesPages) }, (_, idx) => {
+                  let pageNum = idx + 1;
+                  if (responsesPage > 3 && totalResponsesPages > 5) {
+                    if (responsesPage + 2 > totalResponsesPages) {
+                      pageNum = totalResponsesPages - 4 + idx;
+                    } else {
+                      pageNum = responsesPage - 2 + idx;
+                    }
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setResponsesPage(pageNum)}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                        responsesPage === pageNum
+                          ? "bg-blue-600/25 border-blue-500/45 text-blue-400 font-black"
+                          : "border-[#1e293b] text-slate-400 hover:text-white hover:bg-[#1e293b]"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                <button
+                  onClick={() => setResponsesPage(prev => Math.min(prev + 1, totalResponsesPages))}
+                  disabled={responsesPage === totalResponsesPages}
+                  className="p-1.5 border border-[#1e293b] rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-all cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
