@@ -1972,6 +1972,47 @@ function AdminDashboardView({
     return result;
   }, [stats.allResponses, respSearch, filterAttending, filterOrigin, filterDays, filterPrice, filterHasComment, sortBy]);
 
+  const seatingDayStats = useMemo(() => {
+    if (!stats.allResponses) {
+      return {
+        total: 0,
+        attending: 0,
+        attendingPercent: 0,
+        undecided: 0
+      };
+    }
+
+    const dayResponses = stats.allResponses.filter(r => {
+      const days = String(r.attendDays || "");
+      if (seatingTabDay === "day1") {
+        return days.includes("Day 1") || days.includes("1 วัน") || days.includes("Both Days") || days.includes("ทั้งสองวัน") || days.includes("2 วัน");
+      } else {
+        return days.includes("Day 2") || days.includes("Both Days") || days.includes("ทั้งสองวัน") || days.includes("2 วัน");
+      }
+    });
+
+    const total = dayResponses.length;
+
+    const attending = dayResponses.filter(r => {
+      const will = String(r.willAttend || "");
+      return will.includes("Definitely") || will.includes("ไปแน่นอน") || will.includes("Probably") || will.includes("มีโอกาสไป");
+    }).length;
+    
+    const attendingPercent = total > 0 ? (attending / total) * 100 : 0;
+
+    const undecided = dayResponses.filter(r => {
+      const will = String(r.willAttend || "");
+      return will.includes("Undecided") || will.includes("ยังไม่แน่ใจ") || will.includes("Not sure");
+    }).length;
+
+    return {
+      total,
+      attending,
+      attendingPercent,
+      undecided
+    };
+  }, [stats.allResponses, seatingTabDay]);
+
   const handleExportExcel = (exportAll = false) => {
     const dataToExport = exportAll ? (stats.allResponses || []) : filteredResponses;
     if (dataToExport.length === 0) {
@@ -2969,33 +3010,96 @@ function AdminDashboardView({
           </div>
 
           {/* OVERVIEW STATS CARDS FOR SELECTED DAY */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Booked Card */}
-            <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 relative overflow-hidden shadow-lg">
-              <div className={`absolute top-0 right-0 w-24 h-24 blur-3xl -mr-8 -mt-8 rounded-full ${
-                seatingTabDay === 'day1' ? 'bg-blue-500/10' : 'bg-amber-500/10'
-              }`}></div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ที่นั่งถูกจองแล้ว</p>
-              <p className="text-2xl font-black text-white mt-2 font-mono">
-                {seatingTabDay === 'day1' ? stats.bookedCountD1 : stats.bookedCountD2} <span className="text-xs font-normal text-slate-400">ที่นั่ง</span>
-              </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Card 1: Blue */}
+            <div className="bg-[#0b1b36] border border-[#1e3a8a] rounded-2xl p-5 relative overflow-hidden shadow-lg">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+              <div className="flex items-center gap-2 mb-3 relative z-10">
+                <div className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg"><MessageSquare className="w-3.5 h-3.5" /></div>
+                <span className="text-xs text-slate-300 font-bold">ผู้ตอบแบบสำรวจทั้งหมด</span>
+              </div>
+              <div className="relative z-10">
+                <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                  <strong className="text-3xl font-black text-blue-400 tracking-tight">{seatingDayStats.total.toLocaleString()}</strong>
+                  <span className="text-xs text-slate-400 font-medium">คน</span>
+                </div>
+              </div>
             </div>
 
-            {/* Available Card */}
-            <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 relative overflow-hidden shadow-lg">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ที่นั่งว่างคงเหลือ</p>
-              <p className="text-2xl font-black text-white mt-2 font-mono">
-                {CAPACITY - (seatingTabDay === 'day1' ? stats.bookedCountD1 : stats.bookedCountD2)} <span className="text-xs font-normal text-slate-400">ที่นั่ง</span>
-              </p>
+            {/* Card 2: Green */}
+            <div className="bg-[#06261a] border border-[#065f46] rounded-2xl p-5 relative overflow-hidden shadow-lg">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+              <div className="flex items-center gap-2 mb-3 relative z-10">
+                <div className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg"><CheckCircle2 className="w-3.5 h-3.5" /></div>
+                <span className="text-xs text-slate-300 font-bold">ผู้มีแผนเข้าร่วมงาน</span>
+              </div>
+              <div className="relative z-10">
+                <div className="flex items-baseline gap-1.5 flex-wrap">
+                  <strong className="text-3xl font-black text-emerald-400 tracking-tight">{seatingDayStats.attending.toLocaleString()}</strong>
+                  <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                    คน <span className="text-emerald-500 ml-1">({seatingDayStats.attendingPercent.toFixed(2)}%)</span>
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {/* Percent Card */}
-            <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 relative overflow-hidden shadow-lg">
-              <div className="absolute top-0 right-0 w-24 h-24 blur-3xl -mr-8 -mt-8 rounded-full bg-emerald-500/5"></div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">อัตราการจอง</p>
-              <p className="text-2xl font-black text-emerald-400 mt-2 font-mono">
-                {(((seatingTabDay === 'day1' ? stats.bookedCountD1 : stats.bookedCountD2) / CAPACITY) * 100).toFixed(1)}%
-              </p>
+            {/* Card 3: Orange (Undecided) */}
+            <div className="bg-[#241a15] border border-[#78350f] rounded-2xl p-5 relative overflow-hidden shadow-lg">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+              <div className="flex items-center gap-2 mb-3 relative z-10">
+                <div className="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg"><HelpCircle className="w-3.5 h-3.5" /></div>
+                <span className="text-xs text-slate-300 font-bold">ผู้ยังไม่แน่ใจ</span>
+              </div>
+              <div className="relative z-10">
+                <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                  <strong className="text-3xl font-black text-orange-400 tracking-tight">{seatingDayStats.undecided.toLocaleString()}</strong>
+                  <span className="text-xs text-slate-400 font-medium">คน</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4: Purple (DAY 1 Booked) */}
+            <div className={`bg-[#1e1335] border rounded-2xl p-5 relative overflow-hidden shadow-lg transition-all duration-350 ${
+              seatingTabDay === 'day1' 
+                ? 'border-purple-500 shadow-[0_0_25px_rgba(139,92,246,0.2)] ring-1 ring-purple-500/30' 
+                : 'border-[#4c1d95]/50 opacity-40 hover:opacity-75'
+            }`}>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+              <div className="flex items-center gap-2 mb-3 relative z-10">
+                <div className="p-1.5 bg-purple-500/20 text-purple-400 rounded-lg"><LayoutGrid className="w-3.5 h-3.5" /></div>
+                <span className="text-xs text-slate-300 font-bold">ที่นั่งถูกจองแล้ว DAY 1</span>
+              </div>
+              <div className="relative z-10">
+                <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                  <strong className="text-3xl font-black text-purple-400 tracking-tight">{stats.bookedCountD1.toLocaleString()}</strong>
+                  <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()} ที่นั่ง</span>
+                </div>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-purple-500/10 text-[11px] whitespace-nowrap">
+                  <span className="text-purple-400 font-bold">{((stats.bookedCountD1 / CAPACITY) * 100).toFixed(2)}%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 5: Yellow (DAY 2 Booked) */}
+            <div className={`bg-[#2a1d0d] border rounded-2xl p-5 relative overflow-hidden shadow-lg transition-all duration-350 ${
+              seatingTabDay === 'day2' 
+                ? 'border-amber-500 shadow-[0_0_25px_rgba(245,158,11,0.2)] ring-1 ring-amber-500/30' 
+                : 'border-[#92400e]/50 opacity-40 hover:opacity-75'
+            }`}>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600/10 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+              <div className="flex items-center gap-2 mb-3 relative z-10">
+                <div className="p-1.5 bg-amber-500/20 text-amber-400 rounded-lg"><LayoutGrid className="w-3.5 h-3.5" /></div>
+                <span className="text-xs text-slate-300 font-bold">ที่นั่งถูกจองแล้ว DAY 2</span>
+              </div>
+              <div className="relative z-10">
+                <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                  <strong className="text-3xl font-black text-amber-400 tracking-tight">{stats.bookedCountD2.toLocaleString()}</strong>
+                  <span className="text-sm text-slate-500">/ {CAPACITY.toLocaleString()} ที่นั่ง</span>
+                </div>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-amber-500/10 text-[11px] whitespace-nowrap">
+                  <span className="text-amber-400 font-bold">{((stats.bookedCountD2 / CAPACITY) * 100).toFixed(2)}%</span>
+                </div>
+              </div>
             </div>
           </div>
 
