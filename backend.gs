@@ -52,6 +52,37 @@ function doGet(e) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME) || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   const data = sheet.getDataRange().getValues();
   
+  if (data.length === 0) {
+    return ContentService.createTextOutput(JSON.stringify({ stats: null }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  // 1. Map headers to column indices (Dynamic Mapping)
+  const headers = data[0].map(h => String(h).trim().toLowerCase());
+  
+  const colIndex = {
+    timestamp: headers.indexOf("timestamp"),
+    email: headers.indexOf("email"),
+    name: headers.indexOf("name"),
+    willAttend: headers.indexOf("attending") !== -1 ? headers.indexOf("attending") : headers.indexOf("willattend"),
+    origin: headers.indexOf("origin"),
+    attendDays: headers.indexOf("attend_days") !== -1 ? headers.indexOf("attend_days") : headers.indexOf("attenddays"),
+    priceD1: headers.indexOf("price_day1") !== -1 ? headers.indexOf("price_day1") : headers.indexOf("priced1"),
+    priceD2: headers.indexOf("price_day2") !== -1 ? headers.indexOf("price_day2") : headers.indexOf("priced2"),
+    comments: headers.indexOf("comments")
+  };
+  
+  // Fallback to default indices if headers are not found
+  if (colIndex.timestamp === -1) colIndex.timestamp = 0;
+  if (colIndex.email === -1) colIndex.email = 1;
+  if (colIndex.name === -1) colIndex.name = 2;
+  if (colIndex.willAttend === -1) colIndex.willAttend = 3;
+  if (colIndex.origin === -1) colIndex.origin = 4;
+  if (colIndex.attendDays === -1) colIndex.attendDays = 5;
+  if (colIndex.priceD1 === -1) colIndex.priceD1 = 6;
+  if (colIndex.priceD2 === -1) colIndex.priceD2 = 7;
+  if (colIndex.comments === -1) colIndex.comments = 8;
+
   // Skip header row
   const rows = data.slice(1);
   
@@ -68,7 +99,8 @@ function doGet(e) {
     planCounts: { "Definitely": 0, "Probably": 0, "Not sure yet": 0 }, // นับสถิติจริงจากแผนการเข้าชม
     undecidedResponses: [], // รายชื่อคนยังไม่แน่ใจแยกเฉพาะ
     undecidedCountD1: 0, // จำนวนคนยังไม่แน่ใจแยกวัน
-    undecidedCountD2: 0  // จำนวนคนยังไม่แน่ใจแยกวัน
+    undecidedCountD2: 0, // จำนวนคนยังไม่แน่ใจแยกวัน
+    undecidedCountNone: 0 // จำนวนคนยังไม่แน่ใจที่ไม่ได้ระบุวัน (ข้อมูลเดิมก่อนระบบอัปเดต)
   };
   
   // Mapping Thai values back to English keys for the Dashboard Charts
@@ -97,9 +129,20 @@ function doGet(e) {
   };
 
   rows.forEach(row => {
-    const [timestamp, email, name, willAttend, origin, attendDays, priceD1, priceD2, comments] = row;
+    const timestamp = row[colIndex.timestamp];
+    const email = String(row[colIndex.email] || "").trim().toLowerCase();
+    const name = row[colIndex.name];
+    const willAttend = String(row[colIndex.willAttend] || "");
+    const origin = String(row[colIndex.origin] || "");
+    const attendDays = String(row[colIndex.attendDays] || "");
+    const priceD1 = String(row[colIndex.priceD1] || "");
+    const priceD2 = String(row[colIndex.priceD2] || "");
+    const comments = String(row[colIndex.comments] || "");
     
     // เช็กสถานะการเข้าร่วมเพื่อทำสถิติจริงและแยกรายชื่อผู้ที่ "ยังไม่แน่ใจ"
+    const isAttending = willAttend === "ไปแน่นอน / Definitely" || willAttend === "Definitely" ||
+                        willAttend === "มีโอกาสไป / Probably" || willAttend === "Probably";
+                        
     if (willAttend === "ไปแน่นอน / Definitely" || willAttend === "Definitely") {
       stats.totalAttending++;
       stats.planCounts["Definitely"]++;
@@ -117,13 +160,19 @@ function doGet(e) {
       if (engDay === "Day 2" || engDay === "Both Days") {
         stats.undecidedCountD2++;
       }
+      if (!engDay || engDay === "Undecided" || engDay === "") {
+        stats.undecidedCountNone++;
+      }
 
-      // แยกข้อมูลเก็บไว้สำหรับไปแสดงผลในตาราง Admin หลังบ้านเฉพาะ
+      // แยกข้อมูลเก็บไว้สำหรับไปแสดงผลในตาราง Admin หลังบ้านเฉพาะ (มีจำนวนวันและราคาเพิ่มเข้ามา)
       stats.undecidedResponses.push({
         timestamp: timestamp,
         name: name,
         email: email,
         origin: origin,
+        attendDays: attendDays || "-",
+        priceD1: priceD1 || "-",
+        priceD2: priceD2 || "-",
         comments: comments || "-"
       });
     }
@@ -141,8 +190,6 @@ function doGet(e) {
     }
     
     // 4. Booking Counts & Prices
-    const isAttending = willAttend === "ไปแน่นอน / Definitely" || willAttend === "Definitely" ||
-                        willAttend === "มีโอกาสไป / Probably" || willAttend === "Probably";
     if (isAttending) {
       if (engDay === "Day 1" || engDay === "Both Days") {
         stats.d1Booked++;

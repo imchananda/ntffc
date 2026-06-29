@@ -76,10 +76,14 @@ interface StatsData {
     name: string;
     email: string;
     origin: string;
+    attendDays?: string;
+    priceD1?: string;
+    priceD2?: string;
     comments: string;
   }>;
   undecidedCountD1?: number;
   undecidedCountD2?: number;
+  undecidedCountNone?: number;
 }
 
 // Seat Grid Constants
@@ -275,7 +279,8 @@ function App() {
     planCounts: { "Definitely": 0, "Probably": 0, "Not sure yet": 0 },
     undecidedResponses: [],
     undecidedCountD1: 0,
-    undecidedCountD2: 0
+    undecidedCountD2: 0,
+    undecidedCountNone: 0
   });
 
   const [lastTicket, setLastTicket] = useState<{
@@ -331,9 +336,10 @@ function App() {
         const priceD2Demands: Record<string, number> = {};
         const feedbacks: Array<{ timestamp: string; name: string; email: string; comments: string }> = [];
         const planCounts = { "Definitely": 0, "Probably": 0, "Not sure yet": 0 };
-        const undecidedResponses: Array<{ timestamp: string; name: string; email: string; origin: string; comments: string }> = [];
+        const undecidedResponses: Array<{ timestamp: string; name: string; email: string; origin: string; attendDays?: string; priceD1?: string; priceD2?: string; comments: string }> = [];
         let undecidedCountD1 = 0;
         let undecidedCountD2 = 0;
+        let undecidedCountNone = 0;
 
         localResponses.forEach(r => {
           if (r.attending === "Definitely" || r.attending === "Probably") {
@@ -350,11 +356,13 @@ function App() {
               mapped = "Day 1";
             }
             
-            if (mapped === "Day 1" || mapped === "Both Days") {
+            if (mapped === "Day 1") {
               undecidedCountD1++;
-            }
-            if (mapped === "Both Days") {
+            } else if (mapped === "Both Days") {
+              undecidedCountD1++;
               undecidedCountD2++;
+            } else {
+              undecidedCountNone++;
             }
 
             undecidedResponses.push({
@@ -362,6 +370,9 @@ function App() {
               email: r.email,
               name: r.name,
               origin: r.origin,
+              attendDays: r.dayPreference || "-",
+              priceD1: r.priceDay1 || "-",
+              priceD2: r.priceDay2 || "-",
               comments: r.comments || ""
             });
           }
@@ -412,7 +423,8 @@ function App() {
           planCounts,
           undecidedResponses,
           undecidedCountD1,
-          undecidedCountD2
+          undecidedCountD2,
+          undecidedCountNone
         });
         setIsRefreshing(false);
       }, 250);
@@ -444,7 +456,8 @@ function App() {
             planCounts: json.stats.planCounts || { "Definitely": 0, "Probably": 0, "Not sure yet": 0 },
             undecidedResponses: json.stats.undecidedResponses || [],
             undecidedCountD1: json.stats.undecidedCountD1 || 0,
-            undecidedCountD2: json.stats.undecidedCountD2 || 0
+            undecidedCountD2: json.stats.undecidedCountD2 || 0,
+            undecidedCountNone: json.stats.undecidedCountNone || 0
           });
         } else {
           setServerError("เกิดข้อผิดพลาดในการโหลดข้อมูลสถิติ");
@@ -2109,10 +2122,16 @@ function AdminDashboardView({
           </div>
           <div className="relative z-10">
             <strong className="text-3xl font-black text-orange-450 block tracking-tight">{(stats.planCounts?.["Not sure yet"] || 0).toLocaleString()}</strong>
-            <div className="flex items-center justify-between mt-1 text-[11px] text-slate-400">
+            <div className="flex flex-wrap items-center justify-between mt-1.5 text-[10px] text-slate-450 gap-x-2 gap-y-0.5">
               <span>DAY 1: <span className="text-orange-300 font-bold">{(stats.undecidedCountD1 || 0).toLocaleString()} คน</span></span>
-              <span className="mx-1">|</span>
+              <span>|</span>
               <span>DAY 2: <span className="text-orange-300 font-bold">{(stats.undecidedCountD2 || 0).toLocaleString()} คน</span></span>
+              {stats.undecidedCountNone && stats.undecidedCountNone > 0 ? (
+                <>
+                  <span>|</span>
+                  <span className="text-slate-400">ยังไม่เลือกวัน: <span className="text-slate-300 font-bold">{stats.undecidedCountNone.toLocaleString()} คน</span></span>
+                </>
+              ) : null}
             </div>
           </div>
         </div>
@@ -2442,6 +2461,10 @@ function AdminDashboardView({
                   <th className="py-3 px-4 font-semibold">ลำดับ</th>
                   <th className="py-3 px-4 font-semibold">อีเมล</th>
                   <th className="py-3 px-4 font-semibold">ชื่อที่ใช้ในแฟนด้อม</th>
+                  <th className="py-3 px-4 font-semibold">จำนวนวัน</th>
+                  <th className="py-3 px-4 font-semibold">โซน Day 1</th>
+                  <th className="py-3 px-4 font-semibold">โซน Day 2</th>
+                  <th className="py-3 px-4 font-semibold font-sans">ต้นทาง</th>
                   <th className="py-3 px-4 font-semibold">วันเวลาที่ตอบ</th>
                   <th className="py-3 px-4 font-semibold w-full">ข้อเสนอแนะเพิ่มเติม</th>
                 </tr>
@@ -2453,7 +2476,11 @@ function AdminDashboardView({
                       <td className="py-3.5 px-4 text-slate-500">{i + 1}</td>
                       <td className="py-3.5 px-4 text-slate-300 font-mono text-[11px] group-hover:text-blue-400 transition-colors">{f.email}</td>
                       <td className="py-3.5 px-4 font-bold text-slate-200">{f.name}</td>
-                      <td className="py-3.5 px-4 text-slate-400 text-[10px]">{new Date(f.timestamp).toLocaleString("th-TH")}</td>
+                      <td className="py-3.5 px-4 text-slate-300">{f.attendDays || "-"}</td>
+                      <td className="py-3.5 px-4 text-blue-400 text-[11px]">{f.priceD1 || "-"}</td>
+                      <td className="py-3.5 px-4 text-amber-500 text-[11px]">{f.priceD2 || "-"}</td>
+                      <td className="py-3.5 px-4 text-slate-400 text-[11px] font-sans">{f.origin || "-"}</td>
+                      <td className="py-3.5 px-4 text-slate-450 text-[10px]">{new Date(f.timestamp).toLocaleString("th-TH")}</td>
                       <td className="py-3.5 px-4 text-slate-400 max-w-[200px] sm:max-w-md overflow-hidden text-ellipsis leading-relaxed font-sans">{f.comments || "-"}</td>
                     </tr>
                   ))
