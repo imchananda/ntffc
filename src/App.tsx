@@ -1867,12 +1867,12 @@ function AdminDashboardView({
 
   const normalizeOrigin = (origin: string): string => {
     const org = String(origin || "").trim();
-    if (org.includes("Bangkok") || org.includes("กรุงเทพ")) return "กรุงเทพมหานคร / Bangkok";
     if (org.includes("Metropolitan") || org.includes("ปริมณฑล")) return "ปริมณฑล / Bangkok Metropolitan Area";
+    if (org.includes("Bangkok") || org.includes("กรุงเทพ")) return "กรุงเทพมหานคร / Bangkok";
     if (org.includes("Northern") || org.includes("ภาคเหนือ")) return "ภาคเหนือ / Northern Thailand";
     if (org.includes("Central") || org.includes("ภาคกลาง")) return "ภาคกลาง / Central Thailand";
-    if (org.includes("Eastern") || org.includes("ภาคตะวันออก")) return "ภาคตะวันออก / Eastern Thailand";
     if (org.includes("Northeastern") || org.includes("ภาคตะวันออกเฉียงเหนือ")) return "ภาคตะวันออกเฉียงเหนือ / Northeastern Thailand";
+    if (org.includes("Eastern") || org.includes("ภาคตะวันออก")) return "ภาคตะวันออก / Eastern Thailand";
     if (org.includes("Southern") || org.includes("ภาคใต้")) return "ภาคใต้ / Southern Thailand";
     if (org.includes("Overseas") || org.includes("ต่างประเทศ")) return "Overseas";
     return org;
