@@ -1862,6 +1862,11 @@ function AdminDashboardView({
   const [passwordInput, setPasswordInput] = useState("");
   const [passError, setPassError] = useState(false);
   const [feedbackSearch, setFeedbackSearch] = useState("");
+  const [feedbackPage, setFeedbackPage] = useState(1);
+
+  useEffect(() => {
+    setFeedbackPage(1);
+  }, [feedbackSearch]);
 
   // States for the new "ผู้ตอบแบบสำรวจ" (responses) tab
   const [respSearch, setRespSearch] = useState("");
@@ -2108,6 +2113,16 @@ function AdminDashboardView({
       return name.includes(search) || email.includes(search) || comments.includes(search);
     });
   }, [stats.recentFeedbacks, feedbackSearch]);
+
+  const ITEMS_PER_PAGE = 20;
+  const totalFeedbackPages = Math.ceil(filteredFeedbacks.length / ITEMS_PER_PAGE);
+  const paginatedFeedbacks = useMemo(() => {
+    if (activeTab === 'overview') {
+      return filteredFeedbacks.slice(0, 50);
+    }
+    const startIndex = (feedbackPage - 1) * ITEMS_PER_PAGE;
+    return filteredFeedbacks.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredFeedbacks, feedbackPage, activeTab]);
 
   const regionChartData = useMemo(() => {
     const list = Object.entries(stats.origins).map(([name, value]) => ({
@@ -2649,7 +2664,9 @@ function AdminDashboardView({
         <div id="feedbacks" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 space-y-6 shadow-lg scroll-mt-20">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1e293b] pb-4">
             <h3 className="text-[13px] font-bold text-white tracking-wide">
-              ผู้ตอบแบบสำรวจล่าสุด ({filteredFeedbacks.length} รายการ)
+              {activeTab === 'overview' 
+                ? `ผู้ตอบแบบสำรวจล่าสุด (${Math.min(50, filteredFeedbacks.length)} จาก ${filteredFeedbacks.length} รายการ)` 
+                : `ความคิดเห็นและข้อเสนอแนะทั้งหมด (${filteredFeedbacks.length} รายการ)`}
             </h3>
             
             <div className="relative w-full sm:max-w-xs">
@@ -2676,10 +2693,12 @@ function AdminDashboardView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1e293b]/50">
-                {filteredFeedbacks.length > 0 ? (
-                  filteredFeedbacks.map((f, i) => (
+                {paginatedFeedbacks.length > 0 ? (
+                  paginatedFeedbacks.map((f, i) => (
                     <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
-                      <td className="py-3.5 px-4 text-slate-500">{i + 1}</td>
+                      <td className="py-3.5 px-4 text-slate-500">
+                        {activeTab === 'overview' ? i + 1 : (feedbackPage - 1) * ITEMS_PER_PAGE + i + 1}
+                      </td>
                       <td className="py-3.5 px-4 text-slate-300 font-mono text-[11px] group-hover:text-blue-400 transition-colors">{f.email}</td>
                       <td className="py-3.5 px-4 font-bold text-slate-200">{f.name}</td>
                       <td className="py-3.5 px-4 text-slate-400 text-[10px]">{new Date(f.timestamp).toLocaleString("th-TH")}</td>
@@ -2697,9 +2716,63 @@ function AdminDashboardView({
             </table>
           </div>
           
-          {filteredFeedbacks.length > 0 && (
+          {/* PAGINATION CONTROLS */}
+          {activeTab === 'feedbacks' && totalFeedbackPages > 1 && (
+            <div className="flex flex-wrap items-center justify-between border-t border-[#1e293b]/50 pt-4 mt-4 gap-4">
+              <span className="text-xs text-slate-400">
+                แสดงผล {(feedbackPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(feedbackPage * ITEMS_PER_PAGE, filteredFeedbacks.length)} จากทั้งหมด {filteredFeedbacks.length} รายการ
+              </span>
+              
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setFeedbackPage(prev => Math.max(prev - 1, 1))}
+                  disabled={feedbackPage === 1}
+                  className="p-1.5 border border-[#1e293b] rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-all cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                
+                {Array.from({ length: Math.min(5, totalFeedbackPages) }, (_, idx) => {
+                  let pageNum = idx + 1;
+                  if (feedbackPage > 3 && totalFeedbackPages > 5) {
+                    if (feedbackPage + 2 > totalFeedbackPages) {
+                      pageNum = totalFeedbackPages - 4 + idx;
+                    } else {
+                      pageNum = feedbackPage - 2 + idx;
+                    }
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setFeedbackPage(pageNum)}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                        feedbackPage === pageNum
+                          ? "bg-blue-600/25 border-blue-500/45 text-blue-400 font-black"
+                          : "border-[#1e293b] text-slate-400 hover:text-white hover:bg-[#1e293b]"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                <button
+                  onClick={() => setFeedbackPage(prev => Math.min(prev + 1, totalFeedbackPages))}
+                  disabled={feedbackPage === totalFeedbackPages}
+                  className="p-1.5 border border-[#1e293b] rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-all cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'overview' && filteredFeedbacks.length > 50 && (
             <div className="pt-4 flex justify-end">
-              <button className="px-4 py-2 border border-[#1e293b] rounded-lg text-xs font-bold text-slate-400 hover:text-white hover:bg-[#1e293b] transition-all">
+              <button 
+                onClick={() => setActiveTab('feedbacks')}
+                className="px-4 py-2 border border-[#1e293b] rounded-lg text-xs font-bold text-slate-400 hover:text-white hover:bg-[#1e293b] transition-all cursor-pointer"
+              >
                 ดูทั้งหมด
               </button>
             </div>
