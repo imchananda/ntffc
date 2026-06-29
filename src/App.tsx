@@ -2201,13 +2201,11 @@ function AdminDashboardView({
           </a>
           
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('responses'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'responses' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ผู้ตอบแบบสำรวจ</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('feedbacks'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'feedbacks' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ความคิดเห็น & ข้อเสนอแนะ</a>
           
           <div className="pt-5 pb-2 px-3 text-[9px] font-bold uppercase tracking-wider text-slate-600">ที่นั่งและผังคอนเสิร์ต</div>
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('seatingD1'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'seatingD1' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><LayoutGrid className="w-4 h-4" /> ผังที่นั่ง DAY 1</a>
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('seatingD2'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'seatingD2' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><LayoutGrid className="w-4 h-4" /> ผังที่นั่ง DAY 2</a>
-          
-          <div className="pt-5 pb-2 px-3 text-[9px] font-bold uppercase tracking-wider text-slate-600">ความคิดเห็น</div>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('feedbacks'); setIsMobileSidebarOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'feedbacks' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><MessageSquare className="w-4 h-4" /> ความคิดเห็น & ข้อเสนอแนะ</a>
           
           <div className="pt-5 pb-2 px-3 text-[9px] font-bold uppercase tracking-wider text-slate-600">ตั้งค่า</div>
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('settings'); }} className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-[#14233c] text-blue-400 font-bold border border-blue-900/50 shadow-sm' : 'hover:bg-slate-800/40 hover:text-slate-200'}`}><Lock className="w-4 h-4" /> ตั้งค่าระบบ</a>
