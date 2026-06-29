@@ -1790,7 +1790,9 @@ function AdminDashboardView({
   onClose,
   isRefreshing,
   showPublicStats,
-  setShowPublicStats
+  setShowPublicStats,
+  serverError,
+  apiMode
 }: {
   stats: StatsData;
   apiMode?: "mock" | "live";
@@ -1827,11 +1829,13 @@ function AdminDashboardView({
 
   const filteredFeedbacks = useMemo(() => {
     if (!stats.recentFeedbacks) return [];
-    return stats.recentFeedbacks.filter(f =>
-      f.name.toLowerCase().includes(feedbackSearch.toLowerCase()) ||
-      f.email.toLowerCase().includes(feedbackSearch.toLowerCase()) ||
-      f.comments.toLowerCase().includes(feedbackSearch.toLowerCase())
-    );
+    return stats.recentFeedbacks.filter(f => {
+      const name = String(f.name || '').toLowerCase();
+      const email = String(f.email || '').toLowerCase();
+      const comments = String(f.comments || '').toLowerCase();
+      const search = feedbackSearch.toLowerCase();
+      return name.includes(search) || email.includes(search) || comments.includes(search);
+    });
   }, [stats.recentFeedbacks, feedbackSearch]);
 
   const regionChartData = useMemo(() => {
@@ -2057,6 +2061,16 @@ function AdminDashboardView({
             </button>
           </div>
         </div>
+
+        {serverError && (
+          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-2xl flex items-start gap-3 animate-in fade-in duration-200">
+            <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
+            <div>
+              <strong className="font-bold block mb-1">เกิดข้อผิดพลาดในการโหลดข้อมูล:</strong>
+              <p className="leading-relaxed">{serverError}</p>
+            </div>
+          </div>
+        )}
 
       {/* KPI READOUTS */}
       {activeTab === 'overview' && (
