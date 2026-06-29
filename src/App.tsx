@@ -1929,7 +1929,7 @@ function AdminDashboardView({
       // Comment Filter
       let matchesComment = true;
       if (filterHasComment !== "all") {
-        const hasComment = r.comments && r.comments !== "-" && r.comments.trim() !== "";
+        const hasComment = !!(r.comments && r.comments !== "-" && r.comments.trim() !== "");
         matchesComment = filterHasComment === "yes" ? hasComment : !hasComment;
       }
       
