@@ -2168,7 +2168,6 @@ function AdminDashboardView({
             </div>
             <div className="flex items-center justify-between mt-2 pt-2 border-t border-purple-500/10 text-[11px] whitespace-nowrap">
               <span className="text-purple-400 font-bold">{((stats.bookedCountD1 / CAPACITY) * 100).toFixed(2)}%</span>
-              <span className="text-slate-400">คิวสำรอง: <span className="text-purple-300 font-bold">{(stats.waitlistCountD1 || 0).toLocaleString()} คน</span></span>
             </div>
           </div>
         </div>
@@ -2187,7 +2186,6 @@ function AdminDashboardView({
             </div>
             <div className="flex items-center justify-between mt-2 pt-2 border-t border-amber-500/10 text-[11px] whitespace-nowrap">
               <span className="text-amber-400 font-bold">{((stats.bookedCountD2 / CAPACITY) * 100).toFixed(2)}%</span>
-              <span className="text-slate-400">คิวสำรอง: <span className="text-amber-300 font-bold">{(stats.waitlistCountD2 || 0).toLocaleString()} คน</span></span>
             </div>
           </div>
         </div>
