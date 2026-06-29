@@ -3818,11 +3818,11 @@ function createActiveMessage(
   }
 
   // Animation duration & delay
-  const animationDuration = layer === 'background' ? 22 + Math.random() * 8
-    : layer === 'midground' ? 15 + Math.random() * 6
-      : 10 + Math.random() * 4;
+  const animationDuration = layer === 'background' ? 14 + Math.random() * 6
+    : layer === 'midground' ? 10 + Math.random() * 4
+      : 7 + Math.random() * 3;
 
-  const animationDelay = isInitial ? Math.random() * 12 : 0;
+  const animationDelay = isInitial ? Math.random() * 8 : 0;
 
   // Drift
   const driftX = (Math.random() * 30 - 15) * (layer === 'background' ? 0.7 : layer === 'midground' ? 1.1 : 1.5);
@@ -3933,9 +3933,9 @@ function FloatingCommentsBackground({ comments, onCommentClick }: FloatingCommen
   // Determine slot count based on width
   const targetSlotCount = React.useMemo(() => {
     if (containerSize.width === 0) return 0;
-    if (containerSize.width >= 1024) return 24; // Desktop
+    if (containerSize.width >= 1024) return 18; // Desktop
     if (containerSize.width >= 768) return 14;  // Tablet
-    return 4;                                  // Mobile
+    return 6;                                  // Mobile
   }, [containerSize.width]);
 
   // Helper: Get Safe Zones
