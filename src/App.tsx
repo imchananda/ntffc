@@ -84,6 +84,17 @@ interface StatsData {
   undecidedCountD1?: number;
   undecidedCountD2?: number;
   undecidedCountNone?: number;
+  allResponses?: Array<{
+    timestamp: string;
+    email: string;
+    name: string;
+    willAttend: string;
+    origin: string;
+    attendDays: string;
+    priceD1: string;
+    priceD2: string;
+    comments: string;
+  }>;
 }
 
 // Seat Grid Constants
@@ -424,7 +435,20 @@ function App() {
           undecidedResponses,
           undecidedCountD1,
           undecidedCountD2,
-          undecidedCountNone
+          undecidedCountNone,
+          allResponses: localResponses.map(r => ({
+            timestamp: r.timestamp,
+            email: r.email,
+            name: r.name,
+            willAttend: r.attending === "Definitely" ? "ไปแน่นอน / Definitely" 
+                      : r.attending === "Probably" ? "มีโอกาสไป / Probably" 
+                      : "ยังไม่แน่ใจ / Undecided",
+            origin: r.origin,
+            attendDays: r.dayPreference,
+            priceD1: r.priceDay1,
+            priceD2: r.priceDay2,
+            comments: r.comments || "-"
+          }))
         });
         setIsRefreshing(false);
       }, 250);
@@ -457,7 +481,8 @@ function App() {
             undecidedResponses: json.stats.undecidedResponses || [],
             undecidedCountD1: json.stats.undecidedCountD1 || 0,
             undecidedCountD2: json.stats.undecidedCountD2 || 0,
-            undecidedCountNone: json.stats.undecidedCountNone || 0
+            undecidedCountNone: json.stats.undecidedCountNone || 0,
+            allResponses: json.stats.allResponses || []
           });
         } else {
           setServerError("เกิดข้อผิดพลาดในการโหลดข้อมูลสถิติ");
@@ -1831,6 +1856,174 @@ function AdminDashboardView({
   const [passError, setPassError] = useState(false);
   const [feedbackSearch, setFeedbackSearch] = useState("");
 
+  // States for the new "ผู้ตอบแบบสำรวจ" (responses) tab
+  const [respSearch, setRespSearch] = useState("");
+  const [filterAttending, setFilterAttending] = useState("all");
+  const [filterOrigin, setFilterOrigin] = useState("all");
+  const [filterDays, setFilterDays] = useState("all");
+  const [filterPrice, setFilterPrice] = useState("all");
+  const [filterHasComment, setFilterHasComment] = useState("all");
+  const [sortBy, setSortBy] = useState("newest"); // newest, oldest, name-asc, name-desc
+
+  const uniqueOrigins = useMemo(() => {
+    if (!stats.allResponses) return [];
+    const set = new Set(stats.allResponses.map(r => r.origin).filter(Boolean));
+    return Array.from(set).sort();
+  }, [stats.allResponses]);
+
+  const uniquePrices = useMemo(() => {
+    if (!stats.allResponses) return [];
+    const set = new Set<string>();
+    stats.allResponses.forEach(r => {
+      if (r.priceD1 && r.priceD1 !== "-") set.add(r.priceD1);
+      if (r.priceD2 && r.priceD2 !== "-") set.add(r.priceD2);
+    });
+    return Array.from(set).sort();
+  }, [stats.allResponses]);
+
+  const filteredResponses = useMemo(() => {
+    if (!stats.allResponses) return [];
+    
+    // 1. Apply filters
+    let result = stats.allResponses.filter(r => {
+      // Search
+      const search = respSearch.toLowerCase();
+      const matchesSearch = !search || 
+        String(r.name || "").toLowerCase().includes(search) ||
+        String(r.email || "").toLowerCase().includes(search) ||
+        String(r.comments || "").toLowerCase().includes(search) ||
+        String(r.origin || "").toLowerCase().includes(search);
+        
+      // Attending Filter
+      let matchesAttending = true;
+      if (filterAttending !== "all") {
+        if (filterAttending === "definitely") {
+          matchesAttending = r.willAttend.includes("Definitely") || r.willAttend.includes("ไปแน่นอน");
+        } else if (filterAttending === "probably") {
+          matchesAttending = r.willAttend.includes("Probably") || r.willAttend.includes("มีโอกาสไป");
+        } else if (filterAttending === "undecided") {
+          matchesAttending = r.willAttend.includes("Undecided") || r.willAttend.includes("ยังไม่แน่ใจ");
+        }
+      }
+      
+      // Origin Filter
+      const matchesOrigin = filterOrigin === "all" || r.origin === filterOrigin;
+      
+      // Days Filter
+      let matchesDays = true;
+      if (filterDays !== "all") {
+        if (filterDays === "day1") {
+          matchesDays = r.attendDays.includes("Day 1") || r.attendDays.includes("1 วัน");
+        } else if (filterDays === "day2") {
+          matchesDays = r.attendDays.includes("Day 2");
+        } else if (filterDays === "both") {
+          matchesDays = r.attendDays.includes("Both Days") || r.attendDays.includes("2 วัน");
+        } else if (filterDays === "undecided") {
+          matchesDays = r.attendDays.includes("Undecided") || r.attendDays.includes("ยังไม่ตัดสินใจ");
+        }
+      }
+      
+      // Price Filter
+      const matchesPrice = filterPrice === "all" || r.priceD1 === filterPrice || r.priceD2 === filterPrice;
+      
+      // Comment Filter
+      let matchesComment = true;
+      if (filterHasComment !== "all") {
+        const hasComment = r.comments && r.comments !== "-" && r.comments.trim() !== "";
+        matchesComment = filterHasComment === "yes" ? hasComment : !hasComment;
+      }
+      
+      return matchesSearch && matchesAttending && matchesOrigin && matchesDays && matchesPrice && matchesComment;
+    });
+    
+    // 2. Apply sorting
+    result = [...result];
+    if (sortBy === "newest") {
+      result.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    } else if (sortBy === "oldest") {
+      result.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    } else if (sortBy === "name-asc") {
+      result.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "th"));
+    } else if (sortBy === "name-desc") {
+      result.sort((a, b) => String(b.name || "").localeCompare(String(a.name || ""), "th"));
+    }
+    
+    return result;
+  }, [stats.allResponses, respSearch, filterAttending, filterOrigin, filterDays, filterPrice, filterHasComment, sortBy]);
+
+  const handleExportExcel = (exportAll = false) => {
+    const dataToExport = exportAll ? (stats.allResponses || []) : filteredResponses;
+    if (dataToExport.length === 0) {
+      alert("ไม่มีข้อมูลที่จะส่งออก");
+      return;
+    }
+
+    const headers = [
+      "วันเวลาที่ตอบ (Timestamp)",
+      "อีเมล (Email)",
+      "ชื่อที่ใช้ในแฟนด้อม (Fandom Name)",
+      "การเข้าร่วม (Attending)",
+      "ต้นทาง (Origin)",
+      "จำนวนวัน (Attend Days)",
+      "ราคา Day 1",
+      "ราคา Day 2",
+      "ข้อเสนอแนะเพิ่มเติม (Comments)"
+    ];
+
+    let html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8"/>
+        <style>
+          table { border-collapse: collapse; font-family: 'Tahoma', sans-serif; }
+          th { background-color: #1e3a8a; color: #ffffff; font-weight: bold; border: 1px solid #cbd5e1; padding: 8px; font-size: 13px; }
+          td { border: 1px solid #cbd5e1; padding: 8px; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <h3>รายงานข้อมูลผู้ตอบแบบสำรวจ - NamtanFilm FanCon</h3>
+        <p>ส่งออกข้อมูลเมื่อ: ${new Date().toLocaleString("th-TH")}</p>
+        <p>ประเภทการส่งออก: ${exportAll ? "ข้อมูลทั้งหมด" : "ข้อมูลตามตัวกรอง"}</p>
+        <p>จำนวนรายการ: ${dataToExport.length} รายการ</p>
+        <br/>
+        <table>
+          <thead>
+            <tr>
+              <th>ลำดับ</th>
+              ${headers.map(h => `<th>${h}</th>`).join("")}
+            </tr>
+          </thead>
+          <tbody>
+            ${dataToExport.map((row, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${row.timestamp ? new Date(row.timestamp).toLocaleString("th-TH") : ""}</td>
+                <td>${row.email || ""}</td>
+                <td>${row.name || ""}</td>
+                <td>${row.willAttend || ""}</td>
+                <td>${row.origin || ""}</td>
+                <td>${row.attendDays || ""}</td>
+                <td>${row.priceD1 || ""}</td>
+                <td>${row.priceD2 || ""}</td>
+                <td>${row.comments || ""}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `survey_responses_${exportAll ? "all" : "filtered"}_${new Date().toISOString().split('T')[0]}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || "admin123";
@@ -2399,7 +2592,7 @@ function AdminDashboardView({
       )}
 
       {/* DETAILED DATA TABLE */}
-      {(activeTab === 'overview' || activeTab === 'responses' || activeTab === 'feedbacks') && (
+      {(activeTab === 'overview' || activeTab === 'feedbacks') && (
         <div id="feedbacks" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 space-y-6 shadow-lg scroll-mt-20">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1e293b] pb-4">
             <h3 className="text-[13px] font-bold text-white tracking-wide">
@@ -2458,6 +2651,216 @@ function AdminDashboardView({
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ALL RESPONSES DATA TABLE */}
+      {activeTab === 'responses' && (
+        <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 space-y-6 shadow-lg">
+          
+          {/* HEADER & EXPORT CONTROLS */}
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1e293b] pb-4">
+            <div>
+              <h3 className="text-sm font-bold text-white tracking-wide">
+                รายชื่อผู้ตอบแบบสำรวจทั้งหมด ({filteredResponses.length} รายการ)
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-1">แสดงผลข้อมูลดิบครบทุกคอลัมน์จากระบบ</p>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => handleExportExcel(false)}
+                className="px-3.5 py-2 bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-lg hover:bg-emerald-600/30 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" /> ส่งออกข้อมูลที่กรองอยู่ (.xls)
+              </button>
+              <button
+                onClick={() => handleExportExcel(true)}
+                className="px-3.5 py-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-600/30 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" /> ส่งออกทั้งหมด (.xls)
+              </button>
+            </div>
+          </div>
+
+          {/* FILTER BAR */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 bg-[#0b0f19] p-4 rounded-xl border border-[#1e293b]/50">
+            {/* Search */}
+            <div className="relative col-span-1 sm:col-span-2 lg:col-span-1">
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">ค้นหา</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={respSearch}
+                  onChange={(e) => setRespSearch(e.target.value)}
+                  placeholder="ชื่อ, อีเมล, คำแนะนำ..."
+                  className="bg-[#020617] border border-[#1e293b] rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all placeholder:text-slate-600"
+                />
+                <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-500" />
+              </div>
+            </div>
+
+            {/* Filter Attending */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">แผนการเข้าร่วม</label>
+              <select
+                value={filterAttending}
+                onChange={(e) => setFilterAttending(e.target.value)}
+                className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
+              >
+                <option value="all">ทั้งหมด</option>
+                <option value="definitely">ไปแน่นอน (Definitely)</option>
+                <option value="probably">มีโอกาสไป (Probably)</option>
+                <option value="undecided">ยังไม่แน่ใจ (Undecided)</option>
+              </select>
+            </div>
+
+            {/* Filter Origin */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">ต้นทาง</label>
+              <select
+                value={filterOrigin}
+                onChange={(e) => setFilterOrigin(e.target.value)}
+                className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
+              >
+                <option value="all">ทั้งหมด</option>
+                {uniqueOrigins.map(origin => (
+                  <option key={origin} value={origin}>{origin}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter Days */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">จำนวนวัน</label>
+              <select
+                value={filterDays}
+                onChange={(e) => setFilterDays(e.target.value)}
+                className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
+              >
+                <option value="all">ทั้งหมด</option>
+                <option value="day1">Day 1</option>
+                <option value="day2">Day 2</option>
+                <option value="both">Both Days</option>
+                <option value="undecided">ยังไม่ตัดสินใจ</option>
+              </select>
+            </div>
+
+            {/* Filter Price */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">ราคาที่สนใจ</label>
+              <select
+                value={filterPrice}
+                onChange={(e) => setFilterPrice(e.target.value)}
+                className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
+              >
+                <option value="all">ทั้งหมด</option>
+                {uniquePrices.map(price => (
+                  <option key={price} value={price}>{price}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter Has Comment */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">ข้อเสนอแนะ</label>
+              <select
+                value={filterHasComment}
+                onChange={(e) => setFilterHasComment(e.target.value)}
+                className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-full transition-all cursor-pointer"
+              >
+                <option value="all">ทั้งหมด</option>
+                <option value="yes">มีข้อเสนอแนะ</option>
+                <option value="no">ไม่มีข้อเสนอแนะ</option>
+              </select>
+            </div>
+          </div>
+
+          {/* SORT BAR */}
+          <div className="flex justify-between items-center bg-[#0b0f19]/30 px-4 py-2.5 rounded-xl border border-[#1e293b]/30">
+            <span className="text-[11px] text-slate-400">
+              พบข้อมูลที่ตรงเงื่อนไข <strong className="text-blue-400">{filteredResponses.length}</strong> จากทั้งหมด <strong className="text-slate-300">{stats.allResponses?.length || 0}</strong> รายการ
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-500 uppercase">จัดเรียงตาม:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-[#020617] border border-[#1e293b] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 transition-all cursor-pointer"
+              >
+                <option value="newest">ใหม่ล่าสุด (Newest)</option>
+                <option value="oldest">เก่าที่สุด (Oldest)</option>
+                <option value="name-asc">ชื่อตัวอักษร (ก-ฮ / A-Z)</option>
+                <option value="name-desc">ชื่อตัวอักษร (ฮ-ก / Z-A)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* WIDE RESPONSIVE TABLE */}
+          <div className="overflow-x-auto border border-[#1e293b]/50 rounded-xl">
+            <table className="w-full text-left text-xs whitespace-nowrap">
+              <thead>
+                <tr className="bg-[#0b0f19]/80 border-b border-[#1e293b] text-slate-400 font-bold tracking-wider">
+                  <th className="py-3 px-4 font-semibold text-center w-12">ลำดับ</th>
+                  <th className="py-3 px-4 font-semibold w-40">วันเวลาที่ตอบ</th>
+                  <th className="py-3 px-4 font-semibold w-48">อีเมล</th>
+                  <th className="py-3 px-4 font-semibold w-44">ชื่อในแฟนด้อม</th>
+                  <th className="py-3 px-4 font-semibold text-center w-36">การเข้าร่วม</th>
+                  <th className="py-3 px-4 font-semibold w-48">ต้นทาง</th>
+                  <th className="py-3 px-4 font-semibold text-center w-32">จำนวนวัน</th>
+                  <th className="py-3 px-4 font-semibold text-center w-28">ราคา Day 1</th>
+                  <th className="py-3 px-4 font-semibold text-center w-28">ราคา Day 2</th>
+                  <th className="py-3 px-4 font-semibold w-96">ข้อเสนอแนะเพิ่มเติม</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1e293b]/50 bg-slate-900/10">
+                {filteredResponses.length > 0 ? (
+                  filteredResponses.map((r, i) => (
+                    <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
+                      <td className="py-3.5 px-4 text-center text-slate-500 font-mono">{i + 1}</td>
+                      <td className="py-3.5 px-4 text-slate-400 text-[10px] font-mono">
+                        {r.timestamp ? new Date(r.timestamp).toLocaleString("th-TH", { dateStyle: 'short', timeStyle: 'short' }) : "-"}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-300 font-mono text-[11px] group-hover:text-blue-400 transition-colors">
+                        {r.email}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-200">{r.name}</td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide ${
+                          r.willAttend.includes("Definitely") || r.willAttend.includes("ไปแน่นอน")
+                            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
+                            : r.willAttend.includes("Probably") || r.willAttend.includes("มีโอกาสไป")
+                            ? "bg-blue-500/15 text-blue-400 border border-blue-500/20"
+                            : "bg-orange-500/15 text-orange-400 border border-orange-500/20"
+                        }`}>
+                          {r.willAttend.split(" / ")[0]}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-300 font-sans text-[11px]">{r.origin || "-"}</td>
+                      <td className="py-3.5 px-4 text-center text-slate-300 font-medium">
+                        {r.attendDays ? r.attendDays.split(" / ")[0] : "-"}
+                      </td>
+                      <td className="py-3.5 px-4 text-center text-slate-400 font-mono text-[11px]">
+                        {r.priceD1 || "-"}
+                      </td>
+                      <td className="py-3.5 px-4 text-center text-slate-400 font-mono text-[11px]">
+                        {r.priceD2 || "-"}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-400 max-w-[240px] overflow-hidden text-ellipsis leading-relaxed font-sans" title={r.comments}>
+                        {r.comments || "-"}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={10} className="py-16 text-center text-slate-500 font-medium">
+                      ไม่พบข้อมูลผู้ตอบแบบสำรวจตามเงื่อนไขที่เลือก
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

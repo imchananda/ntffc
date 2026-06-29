@@ -100,7 +100,8 @@ function doGet(e) {
     undecidedResponses: [], // รายชื่อคนยังไม่แน่ใจแยกเฉพาะ
     undecidedCountD1: 0, // จำนวนคนยังไม่แน่ใจแยกวัน
     undecidedCountD2: 0, // จำนวนคนยังไม่แน่ใจแยกวัน
-    undecidedCountNone: 0 // จำนวนคนยังไม่แน่ใจที่ไม่ได้ระบุวัน (ข้อมูลเดิมก่อนระบบอัปเดต)
+    undecidedCountNone: 0, // จำนวนคนยังไม่แน่ใจที่ไม่ได้ระบุวัน (ข้อมูลเดิมก่อนระบบอัปเดต)
+    allResponses: [] // บันทึกข้อมูลครบทุกคอลัมน์ของทุกคน
   };
   
   // Mapping Thai values back to English keys for the Dashboard Charts
@@ -216,6 +217,19 @@ function doGet(e) {
       timestamp: timestamp,
       name: name,
       email: email,
+      comments: comments || "-"
+    });
+
+    // บันทึกข้อมูลแบบเต็มครบทุกคอลัมน์ของทุกคน
+    stats.allResponses.push({
+      timestamp: timestamp,
+      email: email,
+      name: name,
+      willAttend: willAttend,
+      origin: origin,
+      attendDays: attendDays,
+      priceD1: priceD1,
+      priceD2: priceD2,
       comments: comments || "-"
     });
   });
