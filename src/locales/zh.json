@@ -16,6 +16,7 @@
   "stats_d1": "DAY 1 已订座位",
   "stats_d2": "DAY 2 已订座位",
   "map_title": "演唱会座位图",
+  "map_btn_refresh": "刷新数据",
   "map_booked_d1": "已预订 (Day 1)",
   "map_booked_d2": "已预订 (Day 2)",
   "map_available": "可选",

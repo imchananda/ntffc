@@ -16,6 +16,7 @@
   "stats_d1": "ที่นั่งถูกจองแล้ว DAY 1",
   "stats_d2": "ที่นั่งถูกจองแล้ว DAY 2",
   "map_title": "ผังคอนเสิร์ต",
+  "map_btn_refresh": "รีเฟรชข้อมูล",
   "map_booked_d1": "จองแล้ว (Day 1)",
   "map_booked_d2": "จองแล้ว (Day 2)",
   "map_available": "ว่าง",

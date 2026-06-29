@@ -16,6 +16,7 @@
   "stats_d1": "Booked Seats DAY 1",
   "stats_d2": "Booked Seats DAY 2",
   "map_title": "Concert Map",
+  "map_btn_refresh": "Refresh Data",
   "map_booked_d1": "Booked (Day 1)",
   "map_booked_d2": "Booked (Day 2)",
   "map_available": "Available",
