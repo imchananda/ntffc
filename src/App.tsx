@@ -897,7 +897,7 @@ function App() {
               )}
 
               {/* WALL OF LETTERS SECTION */}
-              <div className="flex flex-col space-y-6">
+              <div className="flex flex-col space-y-2">
                 {/* Centered Top Header */}
                 <div id="wall-header" className="text-center w-full max-w-xl mx-auto px-4 pointer-events-none z-10">
                   <h3 className="text-2xl md:text-3xl font-extrabold tracking-widest text-transparent bg-gradient-to-r from-amber-200 via-yellow-100 to-blue-200 bg-clip-text select-none drop-shadow-[0_0_15px_rgba(251,191,36,0.15)] uppercase">
@@ -911,15 +911,10 @@ function App() {
                   )}
                   {/* Sleek minimalist divider */}
                   <span className="w-16 h-[1px] bg-gradient-to-r from-transparent via-amber-500/30 to-transparent my-2.5 mx-auto block" />
-                  <p className="text-xs text-slate-400 select-none font-light tracking-wide leading-relaxed">
-                    {i18n.language === 'th' ? 'คลิกที่ข้อความลอยด้านล่างเพื่อเปิดอ่านจดหมายจากใจของแฟนๆ'
-                      : i18n.language === 'zh' ? '点击下方的漂浮文字，阅读粉丝们的心声信件'
-                        : 'Click on the floating messages below to read letters from the fans\' hearts'}
-                  </p>
                 </div>
 
                 {/* Floating Area Below Header */}
-                <div className="relative h-[270px] overflow-hidden">
+                <div className="relative h-[270px] overflow-hidden rounded-2xl bg-black/20 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none">
                   <FloatingCommentsBackground
                     comments={commentsList}
                     onCommentClick={(comment) => {
@@ -928,6 +923,13 @@ function App() {
                     }}
                   />
                 </div>
+
+                {/* Hint text below floating area */}
+                <p className="text-xs text-slate-400 select-none font-light tracking-wide leading-relaxed text-center pointer-events-none">
+                  {i18n.language === 'th' ? 'คลิกที่ข้อความลอยด้านบนเพื่อเปิดอ่านจดหมายจากใจของแฟนๆ'
+                    : i18n.language === 'zh' ? '点击上方的漂浮文字，阅读粉丝们的心声信件'
+                      : 'Click on the floating messages above to read letters from the fans\' hearts'}
+                </p>
               </div>
 
               {/* SEATING CHART SECTION */}
