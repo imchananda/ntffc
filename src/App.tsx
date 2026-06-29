@@ -2172,13 +2172,13 @@ function AdminDashboardView({
     });
 
     const list = Object.entries(counts).map(([name, value]) => ({
-      name: name === "Bangkok" ? "กรุงเทพมหานคร"
-        : name === "Bangkok Metropolitan" ? "ปริมณฑล"
-        : name === "Northern" ? "ภาคเหนือ"
-        : name === "Central" ? "ภาคกลาง"
-        : name === "Eastern" ? "ภาคตะวันออก"
-        : name === "Northeastern" ? "ภาคตะวันออกเฉียงเหนือ"
-        : name === "Southern" ? "ภาคใต้" : "ต่างประเทศ",
+      name: name.includes("Metropolitan") || name.includes("ปริมณฑล") ? "ปริมณฑล"
+        : name.includes("Bangkok") || name.includes("กรุงเทพ") ? "กรุงเทพมหานคร"
+        : name.includes("Northeastern") || name.includes("ภาคตะวันออกเฉียงเหนือ") ? "ภาคตะวันออกเฉียงเหนือ"
+        : name.includes("Northern") || name.includes("ภาคเหนือ") ? "ภาคเหนือ"
+        : name.includes("Central") || name.includes("ภาคกลาง") ? "ภาคกลาง"
+        : name.includes("Eastern") || name.includes("ภาคตะวันออก") ? "ภาคตะวันออก"
+        : name.includes("Southern") || name.includes("ภาคใต้") ? "ภาคใต้" : "ต่างประเทศ",
       value
     })).sort((a, b) => b.value - a.value);
 
@@ -2301,13 +2301,13 @@ function AdminDashboardView({
     });
 
     const list = Object.entries(counts).map(([name, value]) => ({
-      name: name === "Bangkok" ? "กรุงเทพมหานคร"
-        : name === "Bangkok Metropolitan" ? "ปริมณฑล"
-        : name === "Northern" ? "ภาคเหนือ"
-        : name === "Central" ? "ภาคกลาง"
-        : name === "Eastern" ? "ภาคตะวันออก"
-        : name === "Northeastern" ? "ภาคตะวันออกเฉียงเหนือ"
-        : name === "Southern" ? "ภาคใต้" : "ต่างประเทศ",
+      name: name.includes("Metropolitan") || name.includes("ปริมณฑล") ? "ปริมณฑล"
+        : name.includes("Bangkok") || name.includes("กรุงเทพ") ? "กรุงเทพมหานคร"
+        : name.includes("Northeastern") || name.includes("ภาคตะวันออกเฉียงเหนือ") ? "ภาคตะวันออกเฉียงเหนือ"
+        : name.includes("Northern") || name.includes("ภาคเหนือ") ? "ภาคเหนือ"
+        : name.includes("Central") || name.includes("ภาคกลาง") ? "ภาคกลาง"
+        : name.includes("Eastern") || name.includes("ภาคตะวันออก") ? "ภาคตะวันออก"
+        : name.includes("Southern") || name.includes("ภาคใต้") ? "ภาคใต้" : "ต่างประเทศ",
       value
     })).sort((a, b) => b.value - a.value);
 
