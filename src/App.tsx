@@ -498,7 +498,7 @@ function App() {
 
   // Seed Mock Data matching the user's exact mockup statistics!
   const handleSeedMockData = () => {
-    const mockOrigins = ["Bangkok", "Bangkok Metropolitan", "Northern", "Central", "Eastern", "Northeastern", "Southern", "Overseas"];
+    const mockOrigins = ["Bangkok", "Bangkok Metropolitan", "Northern", "Central", "Eastern", "Northeastern", "Southern", "Western", "Overseas"];
     const mockPrices = ["6,000-7,000 THB", "4,500-5,500 THB", "3,000-4,000 THB", "1,500-2,500 THB", "Waiting for benefits"];
     
     const tempResponses: ResponseData[] = [];
@@ -1355,6 +1355,7 @@ function SurveyFormView({
                 : origin === "Eastern" ? "ภาคตะวันออก / Eastern Thailand"
                 : origin === "Northeastern" ? "ภาคตะวันออกเฉียงเหนือ / Northeastern Thailand"
                 : origin === "Southern" ? "ภาคใต้ / Southern Thailand"
+                : origin === "Western" ? "ภาคตะวันตก / Western Thailand"
                 : origin,
           attendDays: dayMapping[dayPreference] || dayPreference,
           priceD1: (dayPreference === "1 Day" || dayPreference === "2 Days") ? priceDay1 : "",
@@ -1500,6 +1501,7 @@ function SurveyFormView({
                     <option value="Eastern">{t('opt_origin_east')}</option>
                     <option value="Northeastern">{t('opt_origin_northeast')}</option>
                     <option value="Southern">{t('opt_origin_south')}</option>
+                    <option value="Western">{t('opt_origin_west')}</option>
                     <option value="Overseas">{t('opt_origin_overseas')}</option>
                   </select>
                   <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -1916,6 +1918,7 @@ function AdminDashboardView({
     if (org.includes("Northeastern") || org.includes("ภาคตะวันออกเฉียงเหนือ")) return "ภาคตะวันออกเฉียงเหนือ / Northeastern Thailand";
     if (org.includes("Eastern") || org.includes("ภาคตะวันออก")) return "ภาคตะวันออก / Eastern Thailand";
     if (org.includes("Southern") || org.includes("ภาคใต้")) return "ภาคใต้ / Southern Thailand";
+    if (org.includes("Western") || org.includes("ภาคตะวันตก")) return "ภาคตะวันตก / Western Thailand";
     if (org.includes("Overseas") || org.includes("ต่างประเทศ")) return "Overseas";
     return org;
   };
@@ -2206,7 +2209,8 @@ function AdminDashboardView({
         : name.includes("Northern") || name.includes("ภาคเหนือ") ? "ภาคเหนือ"
         : name.includes("Central") || name.includes("ภาคกลาง") ? "ภาคกลาง"
         : name.includes("Eastern") || name.includes("ภาคตะวันออก") ? "ภาคตะวันออก"
-        : name.includes("Southern") || name.includes("ภาคใต้") ? "ภาคใต้" : "ต่างประเทศ",
+        : name.includes("Southern") || name.includes("ภาคใต้") ? "ภาคใต้"
+        : name.includes("Western") || name.includes("ภาคตะวันตก") ? "ภาคตะวันตก" : "ต่างประเทศ",
       value
     })).sort((a, b) => b.value - a.value);
 
@@ -2335,7 +2339,8 @@ function AdminDashboardView({
         : name.includes("Northern") || name.includes("ภาคเหนือ") ? "ภาคเหนือ"
         : name.includes("Central") || name.includes("ภาคกลาง") ? "ภาคกลาง"
         : name.includes("Eastern") || name.includes("ภาคตะวันออก") ? "ภาคตะวันออก"
-        : name.includes("Southern") || name.includes("ภาคใต้") ? "ภาคใต้" : "ต่างประเทศ",
+        : name.includes("Southern") || name.includes("ภาคใต้") ? "ภาคใต้"
+        : name.includes("Western") || name.includes("ภาคตะวันตก") ? "ภาคตะวันตก" : "ต่างประเทศ",
       value
     })).sort((a, b) => b.value - a.value);
 

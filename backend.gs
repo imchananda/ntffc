@@ -113,6 +113,7 @@ function doGet(e) {
     "ภาคตะวันออก / Eastern Thailand": "Eastern",
     "ภาคตะวันออกเฉียงเหนือ / Northeastern Thailand": "Northeastern",
     "ภาคใต้ / Southern Thailand": "Southern",
+    "ภาคตะวันตก / Western Thailand": "Western",
     "Overseas": "Overseas"
   };
   
