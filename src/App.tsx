@@ -1870,6 +1870,7 @@ function AdminDashboardView({
   const [feedbackSearch, setFeedbackSearch] = useState("");
   const [feedbackPage, setFeedbackPage] = useState(1);
   const [demographicsDay, setDemographicsDay] = useState<"all" | "day1" | "day2">("all");
+  const [priceFilterDays, setPriceFilterDays] = useState<"1day" | "2days">("1day");
 
   useEffect(() => {
     setFeedbackPage(1);
@@ -2709,17 +2710,45 @@ function AdminDashboardView({
             </div>
           </div>
 
-          {/* Card 3: เข้าร่วมคอนเสิร์ต 1 วัน */}
+          {/* Card 3: ราคาบัตรที่สนใจ */}
           <div id="prices" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden scroll-mt-20">
             <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-            <h3 className="text-[13px] font-bold text-white relative z-10">
-              เข้าร่วมคอนเสิร์ต 1 วัน
-            </h3>
+            
+            <div className="flex items-center justify-between gap-2 relative z-10 border-b border-[#1e293b]/40 pb-2">
+              <h3 className="text-[13px] font-bold text-white">
+                ราคาบัตรที่สนใจ
+              </h3>
+              
+              {/* Day filter for prices */}
+              <div className="flex bg-slate-950 p-0.5 rounded-lg border border-[#1e293b] gap-0.5 shrink-0">
+                <button
+                  onClick={() => setPriceFilterDays("1day")}
+                  className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                    priceFilterDays === "1day"
+                      ? "bg-blue-500/25 text-blue-400 border border-blue-500/20"
+                      : "text-slate-500 hover:text-slate-300 border border-transparent"
+                  }`}
+                >
+                  1 วัน
+                </button>
+                <button
+                  onClick={() => setPriceFilterDays("2days")}
+                  className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                    priceFilterDays === "2days"
+                      ? "bg-amber-500/20 text-amber-400 border border-amber-500/15"
+                      : "text-slate-500 hover:text-slate-300 border border-transparent"
+                  }`}
+                >
+                  2 วัน
+                </button>
+              </div>
+            </div>
+
             <div className="h-[180px] w-full flex items-center justify-center relative z-10">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={priceD1ChartData}
+                    data={priceFilterDays === "1day" ? priceD1ChartData : priceD2ChartData}
                     cx="50%"
                     cy="50%"
                     innerRadius={50}
@@ -2727,7 +2756,7 @@ function AdminDashboardView({
                     stroke="none"
                     dataKey="value"
                   >
-                    {priceD1ChartData.map((_, index) => (
+                    {(priceFilterDays === "1day" ? priceD1ChartData : priceD2ChartData).map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -2740,58 +2769,22 @@ function AdminDashboardView({
             </div>
             {/* Legend */}
             <div className="grid grid-cols-1 gap-y-2 mt-2 relative z-10 text-[10px]">
-              {priceD1ChartData.slice(0, 5).map((entry, index) => (
-                <div key={index} className="flex items-center gap-1.5 text-slate-300">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                  <span>{entry.name}</span>
-                  <span className="ml-auto font-bold text-white">{entry.value.toLocaleString()} คน ({((entry.value / stats.bookedCountD1) * 100).toFixed(1)}%)</span>
-                </div>
-              ))}
+              {(priceFilterDays === "1day" ? priceD1ChartData : priceD2ChartData).slice(0, 5).map((entry, index) => {
+                const total = priceFilterDays === "1day" ? stats.bookedCountD1 : stats.bookedCountD2;
+                return (
+                  <div key={index} className="flex items-center gap-1.5 text-slate-300">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+                    <span>{entry.name}</span>
+                    <span className="ml-auto font-bold text-white">
+                      {entry.value.toLocaleString()} คน ({(total > 0 ? (entry.value / total * 100) : 0).toFixed(1)}%)
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Card 4: เข้าร่วมคอนเสิร์ต 2 วัน (กรณีเพิ่มวัน) */}
-          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-            <h3 className="text-[13px] font-bold text-white relative z-10">
-              เข้าร่วมคอนเสิร์ต 2 วัน (กรณีเพิ่มวัน)
-            </h3>
-            <div className="h-[180px] w-full flex items-center justify-center relative z-10">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={priceD2ChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={75}
-                    stroke="none"
-                    dataKey="value"
-                  >
-                    {priceD2ChartData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip
-                    contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
-                    itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            {/* Legend */}
-            <div className="grid grid-cols-1 gap-y-2 mt-2 relative z-10 text-[10px]">
-              {priceD2ChartData.slice(0, 5).map((entry, index) => (
-                <div key={index} className="flex items-center gap-1.5 text-slate-300">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                  <span>{entry.name}</span>
-                  <span className="ml-auto font-bold text-white">{entry.value.toLocaleString()} คน ({((entry.value / stats.bookedCountD2) * 100).toFixed(1)}%)</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Card 5: การเข้าร่วมงาน 2 วัน */}
+          {/* Card 4: การเข้าร่วมงาน 2 วัน */}
           <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
             <h3 className="text-[13px] font-bold text-white relative z-10">
