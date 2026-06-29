@@ -2832,13 +2832,11 @@ function AdminDashboardView({
       )}
 
       {/* DETAILED DATA TABLE */}
-      {(activeTab === 'overview' || activeTab === 'feedbacks') && (
+      {activeTab === 'feedbacks' && (
         <div id="feedbacks" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 space-y-6 shadow-lg scroll-mt-20">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1e293b] pb-4">
             <h3 className="text-[13px] font-bold text-white tracking-wide">
-              {activeTab === 'overview' 
-                ? `ผู้ตอบแบบสำรวจล่าสุด (${Math.min(50, filteredFeedbacks.length)} จาก ${filteredFeedbacks.length} รายการ)` 
-                : `ความคิดเห็นและข้อเสนอแนะทั้งหมด (${filteredFeedbacks.length} รายการ)`}
+              ความคิดเห็นและข้อเสนอแนะทั้งหมด ({filteredFeedbacks.length} รายการ)
             </h3>
             
             <div className="relative w-full sm:max-w-xs">
@@ -2869,7 +2867,7 @@ function AdminDashboardView({
                   paginatedFeedbacks.map((f, i) => (
                     <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
                       <td className="py-3.5 px-4 text-slate-500">
-                        {activeTab === 'overview' ? i + 1 : (feedbackPage - 1) * ITEMS_PER_PAGE + i + 1}
+                        {(feedbackPage - 1) * ITEMS_PER_PAGE + i + 1}
                       </td>
                       <td className="py-3.5 px-4 text-slate-300 font-mono text-[11px] group-hover:text-blue-400 transition-colors">{f.email}</td>
                       <td className="py-3.5 px-4 font-bold text-slate-200">{f.name}</td>
@@ -2936,17 +2934,6 @@ function AdminDashboardView({
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
-            </div>
-          )}
-
-          {activeTab === 'overview' && filteredFeedbacks.length > 50 && (
-            <div className="pt-4 flex justify-end">
-              <button 
-                onClick={() => setActiveTab('feedbacks')}
-                className="px-4 py-2 border border-[#1e293b] rounded-lg text-xs font-bold text-slate-400 hover:text-white hover:bg-[#1e293b] transition-all cursor-pointer"
-              >
-                ดูทั้งหมด
-              </button>
             </div>
           )}
         </div>
