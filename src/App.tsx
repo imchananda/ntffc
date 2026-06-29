@@ -1869,6 +1869,7 @@ function AdminDashboardView({
   const [passError, setPassError] = useState(false);
   const [feedbackSearch, setFeedbackSearch] = useState("");
   const [feedbackPage, setFeedbackPage] = useState(1);
+  const [demographicsDay, setDemographicsDay] = useState<"all" | "day1" | "day2">("all");
 
   useEffect(() => {
     setFeedbackPage(1);
@@ -2149,7 +2150,27 @@ function AdminDashboardView({
   }, [filteredFeedbacks, feedbackPage, activeTab]);
 
   const regionChartData = useMemo(() => {
-    const list = Object.entries(stats.origins).map(([name, value]) => ({
+    if (!stats.allResponses) {
+      return [{ name: "ไม่มีข้อมูล", value: 0 }];
+    }
+
+    const filtered = stats.allResponses.filter(r => {
+      if (demographicsDay === "all") return true;
+      const days = String(r.attendDays || "");
+      if (demographicsDay === "day1") {
+        return days.includes("Day 1") || days.includes("1 วัน") || days.includes("Both Days") || days.includes("ทั้งสองวัน") || days.includes("2 วัน");
+      } else {
+        return days.includes("Day 2") || days.includes("Both Days") || days.includes("ทั้งสองวัน") || days.includes("2 วัน");
+      }
+    });
+
+    const counts: Record<string, number> = {};
+    filtered.forEach(r => {
+      const origin = normalizeOrigin(r.origin);
+      counts[origin] = (counts[origin] || 0) + 1;
+    });
+
+    const list = Object.entries(counts).map(([name, value]) => ({
       name: name === "Bangkok" ? "กรุงเทพมหานคร"
         : name === "Bangkok Metropolitan" ? "ปริมณฑล"
         : name === "Northern" ? "ภาคเหนือ"
@@ -2159,8 +2180,53 @@ function AdminDashboardView({
         : name === "Southern" ? "ภาคใต้" : "ต่างประเทศ",
       value
     })).sort((a, b) => b.value - a.value);
+
     return list.length ? list : [{ name: "ไม่มีข้อมูล", value: 0 }];
-  }, [stats.origins]);
+  }, [stats.allResponses, demographicsDay]);
+
+  const attendingPlanBreakdown = useMemo(() => {
+    if (!stats.allResponses) {
+      return {
+        combined: { definitely: 0, probably: 0, undecided: 0 },
+        day1: { definitely: 0, probably: 0, undecided: 0 },
+        day2: { definitely: 0, probably: 0, undecided: 0 }
+      };
+    }
+
+    const res = {
+      combined: { definitely: 0, probably: 0, undecided: 0 },
+      day1: { definitely: 0, probably: 0, undecided: 0 },
+      day2: { definitely: 0, probably: 0, undecided: 0 }
+    };
+
+    stats.allResponses.forEach(r => {
+      const will = String(r.willAttend || "");
+      const days = String(r.attendDays || "");
+      
+      const isDef = will.includes("Definitely") || will.includes("ไปแน่นอน");
+      const isProb = will.includes("Probably") || will.includes("มีโอกาสไป");
+      const isUnd = will.includes("Undecided") || will.includes("ยังไม่แน่ใจ") || will.includes("Not sure");
+
+      const isD1 = days.includes("Day 1") || days.includes("1 วัน") || days.includes("Both Days") || days.includes("ทั้งสองวัน") || days.includes("2 วัน");
+      const isD2 = days.includes("Day 2") || days.includes("Both Days") || days.includes("ทั้งสองวัน") || days.includes("2 วัน");
+
+      if (isDef) {
+        res.combined.definitely += 1;
+        if (isD1) res.day1.definitely += 1;
+        if (isD2) res.day2.definitely += 1;
+      } else if (isProb) {
+        res.combined.probably += 1;
+        if (isD1) res.day1.probably += 1;
+        if (isD2) res.day2.probably += 1;
+      } else if (isUnd) {
+        res.combined.undecided += 1;
+        if (isD1) res.day1.undecided += 1;
+        if (isD2) res.day2.undecided += 1;
+      }
+    });
+
+    return res;
+  }, [stats.allResponses]);
 
   const planChartData = useMemo(() => {
     if (stats.planCounts) {
@@ -2488,209 +2554,288 @@ function AdminDashboardView({
       )}
 
       {/* CHARTS GRID */}
-      {(activeTab === 'overview' || activeTab === 'demographics' || activeTab === 'prices') && (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        
-        {/* Demographics chart */}
-        {(activeTab === 'overview' || activeTab === 'demographics') && (
-        <div id="demographics" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden scroll-mt-20">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-          <h3 className="text-[13px] font-bold text-white relative z-10">
-            สัดส่วนแหล่งที่มาของผู้เข้าร่วม
-          </h3>
-          <div className="h-[180px] w-full flex items-center justify-center relative z-10">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={regionChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={75}
-                  stroke="none"
-                  dataKey="value"
-                >
-                  {regionChartData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <ChartTooltip
-                  contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
-                  itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          {/* Legend */}
-          <div className="grid grid-cols-2 gap-x-2 gap-y-2 mt-2 relative z-10">
-            {regionChartData.slice(0, 6).map((entry, index) => (
-              <div key={index} className="flex items-center gap-1.5 text-[10px] text-slate-300">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                <span className="truncate">{entry.name}</span>
-                <span className="ml-auto font-bold text-white">{((entry.value / stats.totalResponses) * 100).toFixed(1)}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        )}
-
-        {/* Attendance Plan Bar chart */}
-        {(activeTab === 'overview' || activeTab === 'prices') && (
-        <>
+      {activeTab === 'overview' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          {/* Card 1: แผนการเข้าร่วมงาน */}
           <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-          <h3 className="text-[13px] font-bold text-white relative z-10">
-            แผนการเข้าร่วมงาน
-          </h3>
-          <div className="h-[220px] w-full mt-2 relative z-10">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                layout="vertical"
-                data={planChartData}
-                margin={{ top: 0, right: 30, left: -10, bottom: 0 }}
-              >
-                <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 500 }} width={70} />
-                <ChartTooltip
-                  cursor={{ fill: '#1e293b', opacity: 0.4 }}
-                  contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px" }}
-                  itemStyle={{ color: "#f8fafc", fontSize: '11px', fontWeight: 'bold' }}
-                />
-                <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20}>
-                  {planChartData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#8b5cf6', '#64748b'][index % 4]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Day 1 Price Demand Donut */}
-        <div id="prices" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden scroll-mt-20">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-          <h3 className="text-[13px] font-bold text-white relative z-10">
-            ความสนใจบัตร DAY 1
-          </h3>
-          <div className="h-[180px] w-full flex items-center justify-center relative z-10">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={priceD1ChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={75}
-                  stroke="none"
-                  dataKey="value"
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+            <h3 className="text-[13px] font-bold text-white relative z-10">
+              แผนการเข้าร่วมงาน
+            </h3>
+            <div className="h-[180px] w-full mt-2 relative z-10">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  layout="vertical"
+                  data={planChartData}
+                  margin={{ top: 0, right: 30, left: -10, bottom: 0 }}
                 >
-                  {priceD1ChartData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <ChartTooltip
-                  contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
-                  itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 500 }} width={75} />
+                  <ChartTooltip
+                    cursor={{ fill: '#1e293b', opacity: 0.4 }}
+                    contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px" }}
+                    itemStyle={{ color: "#f8fafc", fontSize: '11px', fontWeight: 'bold' }}
+                  />
+                  <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={16}>
+                    {planChartData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#8b5cf6', '#64748b'][index % 4]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            
+            {/* Breakdown Table */}
+            <div className="mt-4 border-t border-[#1e293b] pt-4 text-[10px] font-sans text-slate-300 relative z-10">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="text-slate-400 font-bold border-b border-[#1e293b]/50">
+                    <th className="pb-2">แผนการเข้าร่วม</th>
+                    <th className="pb-2 text-right">รวมทั้ง 2 วัน</th>
+                    <th className="pb-2 text-right text-blue-400">DAY 1</th>
+                    <th className="pb-2 text-right text-amber-400">DAY 2</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#1e293b]/30">
+                  <tr className="hover:bg-white/[0.02]">
+                    <td className="py-2 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span> ไปแน่นอน
+                    </td>
+                    <td className="py-2 text-right font-bold text-white">{attendingPlanBreakdown.combined.definitely.toLocaleString()} คน</td>
+                    <td className="py-2 text-right text-blue-300">{attendingPlanBreakdown.day1.definitely.toLocaleString()} คน</td>
+                    <td className="py-2 text-right text-amber-300">{attendingPlanBreakdown.day2.definitely.toLocaleString()} คน</td>
+                  </tr>
+                  <tr className="hover:bg-white/[0.02]">
+                    <td className="py-2 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span> มีโอกาสไป
+                    </td>
+                    <td className="py-2 text-right font-bold text-white">{attendingPlanBreakdown.combined.probably.toLocaleString()} คน</td>
+                    <td className="py-2 text-right text-blue-300">{attendingPlanBreakdown.day1.probably.toLocaleString()} คน</td>
+                    <td className="py-2 text-right text-amber-300">{attendingPlanBreakdown.day2.probably.toLocaleString()} คน</td>
+                  </tr>
+                  <tr className="hover:bg-white/[0.02]">
+                    <td className="py-2 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span> ยังไม่แน่ใจ
+                    </td>
+                    <td className="py-2 text-right font-bold text-white">{attendingPlanBreakdown.combined.undecided.toLocaleString()} คน</td>
+                    <td className="py-2 text-right text-blue-300">{attendingPlanBreakdown.day1.undecided.toLocaleString()} คน</td>
+                    <td className="py-2 text-right text-amber-300">{attendingPlanBreakdown.day2.undecided.toLocaleString()} คน</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-          {/* Legend */}
-          <div className="grid grid-cols-1 gap-y-2 mt-2 relative z-10">
-            {priceD1ChartData.slice(0, 4).map((entry, index) => (
-              <div key={index} className="flex items-center gap-1.5 text-[10px] text-slate-300">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                <span>{entry.name}</span>
-                <span className="ml-auto font-bold text-white">{((entry.value / stats.bookedCountD1) * 100).toFixed(1)}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Day 2 Price Demand Donut */}
-        <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-          <h3 className="text-[13px] font-bold text-white relative z-10">
-            ความสนใจบัตร DAY 2
-          </h3>
-          <div className="h-[180px] w-full flex items-center justify-center relative z-10">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={priceD2ChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={75}
-                  stroke="none"
-                  dataKey="value"
+          {/* Card 2: สัดส่วนแหล่งที่มาของผู้เข้าร่วม */}
+          <div id="demographics" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden scroll-mt-20">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+            
+            <div className="flex items-center justify-between gap-2 relative z-10 border-b border-[#1e293b]/40 pb-2">
+              <h3 className="text-[13px] font-bold text-white">
+                สัดส่วนแหล่งที่มาของผู้เข้าร่วม
+              </h3>
+              
+              {/* Day filter for demographics */}
+              <div className="flex bg-slate-950 p-0.5 rounded-lg border border-[#1e293b] gap-0.5 shrink-0">
+                <button
+                  onClick={() => setDemographicsDay("all")}
+                  className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                    demographicsDay === "all"
+                      ? "bg-blue-500/25 text-blue-400 border border-blue-500/20"
+                      : "text-slate-500 hover:text-slate-300 border border-transparent"
+                  }`}
                 >
-                  {priceD2ChartData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <ChartTooltip
-                  contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
-                  itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          {/* Legend */}
-          <div className="grid grid-cols-1 gap-y-2 mt-2 relative z-10">
-            {priceD2ChartData.slice(0, 4).map((entry, index) => (
-              <div key={index} className="flex items-center gap-1.5 text-[10px] text-slate-300">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                <span>{entry.name}</span>
-                <span className="ml-auto font-bold text-white">{((entry.value / stats.bookedCountD2) * 100).toFixed(1)}%</span>
+                  ทั้งหมด
+                </button>
+                <button
+                  onClick={() => setDemographicsDay("day1")}
+                  className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                    demographicsDay === "day1"
+                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/15"
+                      : "text-slate-500 hover:text-slate-300 border border-transparent"
+                  }`}
+                >
+                  DAY 1
+                </button>
+                <button
+                  onClick={() => setDemographicsDay("day2")}
+                  className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                    demographicsDay === "day2"
+                      ? "bg-amber-500/20 text-amber-400 border border-amber-500/15"
+                      : "text-slate-500 hover:text-slate-300 border border-transparent"
+                  }`}
+                >
+                  DAY 2
+                </button>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* Attending Days Donut */}
-        <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-rose-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-          <h3 className="text-[13px] font-bold text-white relative z-10">
-            การเข้าร่วมงาน 2 วัน
-          </h3>
-          <div className="h-[180px] w-full flex items-center justify-center relative z-10">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={attendingDaysChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={75}
-                  stroke="none"
-                  dataKey="value"
-                >
-                  {attendingDaysChartData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={['#f59e0b', '#3b82f6', '#10b981', '#8b5cf6'][index % 4]} />
-                  ))}
-                </Pie>
-                <ChartTooltip
-                  contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
-                  itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="h-[180px] w-full flex items-center justify-center relative z-10">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={regionChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={75}
+                    stroke="none"
+                    dataKey="value"
+                  >
+                    {regionChartData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip
+                    contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
+                    itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            {/* Legend */}
+            <div className="grid grid-cols-2 gap-x-2 gap-y-2 mt-2 relative z-10 text-[10px]">
+              {regionChartData.slice(0, 6).map((entry, index) => {
+                const total = regionChartData.reduce((acc, curr) => acc + curr.value, 0);
+                return (
+                  <div key={index} className="flex items-center gap-1.5 text-slate-300">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+                    <span className="truncate">{entry.name}</span>
+                    <span className="ml-auto font-bold text-white">{(total > 0 ? (entry.value / total * 100) : 0).toFixed(1)}%</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          {/* Legend */}
-          <div className="grid grid-cols-1 gap-y-2 mt-2 relative z-10">
-            {attendingDaysChartData.map((entry, index) => (
-              <div key={index} className="flex items-center gap-1.5 text-[10px] text-slate-300">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#8b5cf6'][index % 4] }}></span>
-                <span>{entry.name}</span>
-                <span className="ml-auto font-bold text-white">{((entry.value / stats.totalResponses) * 100).toFixed(1)}%</span>
-              </div>
-            ))}
+
+          {/* Card 3: เข้าร่วมคอนเสิร์ต 1 วัน */}
+          <div id="prices" className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden scroll-mt-20">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+            <h3 className="text-[13px] font-bold text-white relative z-10">
+              เข้าร่วมคอนเสิร์ต 1 วัน
+            </h3>
+            <div className="h-[180px] w-full flex items-center justify-center relative z-10">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={priceD1ChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={75}
+                    stroke="none"
+                    dataKey="value"
+                  >
+                    {priceD1ChartData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip
+                    contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
+                    itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            {/* Legend */}
+            <div className="grid grid-cols-1 gap-y-2 mt-2 relative z-10 text-[10px]">
+              {priceD1ChartData.slice(0, 5).map((entry, index) => (
+                <div key={index} className="flex items-center gap-1.5 text-slate-300">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+                  <span>{entry.name}</span>
+                  <span className="ml-auto font-bold text-white">{entry.value.toLocaleString()} คน ({((entry.value / stats.bookedCountD1) * 100).toFixed(1)}%)</span>
+                </div>
+              ))}
+            </div>
           </div>
+
+          {/* Card 4: เข้าร่วมคอนเสิร์ต 2 วัน (กรณีเพิ่มวัน) */}
+          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+            <h3 className="text-[13px] font-bold text-white relative z-10">
+              เข้าร่วมคอนเสิร์ต 2 วัน (กรณีเพิ่มวัน)
+            </h3>
+            <div className="h-[180px] w-full flex items-center justify-center relative z-10">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={priceD2ChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={75}
+                    stroke="none"
+                    dataKey="value"
+                  >
+                    {priceD2ChartData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip
+                    contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
+                    itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            {/* Legend */}
+            <div className="grid grid-cols-1 gap-y-2 mt-2 relative z-10 text-[10px]">
+              {priceD2ChartData.slice(0, 5).map((entry, index) => (
+                <div key={index} className="flex items-center gap-1.5 text-slate-300">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+                  <span>{entry.name}</span>
+                  <span className="ml-auto font-bold text-white">{entry.value.toLocaleString()} คน ({((entry.value / stats.bookedCountD2) * 100).toFixed(1)}%)</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Card 5: การเข้าร่วมงาน 2 วัน */}
+          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+            <h3 className="text-[13px] font-bold text-white relative z-10">
+              การเข้าร่วมงาน 2 วัน
+            </h3>
+            <div className="h-[180px] w-full flex items-center justify-center relative z-10">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={attendingDaysChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={75}
+                    stroke="none"
+                    dataKey="value"
+                  >
+                    {attendingDaysChartData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip
+                    contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
+                    itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            {/* Legend */}
+            <div className="grid grid-cols-1 gap-y-2 mt-2 relative z-10 text-[10px]">
+              {attendingDaysChartData.map((entry, index) => {
+                const total = attendingDaysChartData.reduce((acc, curr) => acc + curr.value, 0);
+                return (
+                  <div key={index} className="flex items-center gap-1.5 text-slate-300">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[(index + 3) % COLORS.length] }}></span>
+                    <span>{entry.name}</span>
+                    <span className="ml-auto font-bold text-white">{entry.value.toLocaleString()} คน ({(total > 0 ? (entry.value / total * 100) : 0).toFixed(1)}%)</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
         </div>
-        </>
-        )}
-      </div>
       )}
 
       {/* DETAILED DATA TABLE */}
