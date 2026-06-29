@@ -2283,6 +2283,37 @@ function AdminDashboardView({
     ].filter(d => d.value > 0);
   }, [stats.attendingDays, t]);
 
+  const commentOriginsChartData = useMemo(() => {
+    if (!stats.allResponses) {
+      return [{ name: "ไม่มีข้อมูล", value: 0 }];
+    }
+
+    // Filter responses that have comments
+    const commentedResponses = stats.allResponses.filter(
+      r => r.comments && r.comments !== "-" && r.comments.trim() !== ""
+    );
+
+    // Count by origin
+    const counts: Record<string, number> = {};
+    commentedResponses.forEach(r => {
+      const origin = normalizeOrigin(r.origin);
+      counts[origin] = (counts[origin] || 0) + 1;
+    });
+
+    const list = Object.entries(counts).map(([name, value]) => ({
+      name: name === "Bangkok" ? "กรุงเทพมหานคร"
+        : name === "Bangkok Metropolitan" ? "ปริมณฑล"
+        : name === "Northern" ? "ภาคเหนือ"
+        : name === "Central" ? "ภาคกลาง"
+        : name === "Eastern" ? "ภาคตะวันออก"
+        : name === "Northeastern" ? "ภาคตะวันออกเฉียงเหนือ"
+        : name === "Southern" ? "ภาคใต้" : "ต่างประเทศ",
+      value
+    })).sort((a, b) => b.value - a.value);
+
+    return list.length ? list : [{ name: "ไม่มีข้อมูล", value: 0 }];
+  }, [stats.allResponses]);
+
   const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#64748b', '#334155'];
 
   if (!isAdminAuthenticated) {
@@ -2821,6 +2852,50 @@ function AdminDashboardView({
                   <div key={index} className="flex items-center gap-1.5 text-slate-300">
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[(index + 3) % COLORS.length] }}></span>
                     <span>{entry.name}</span>
+                    <span className="ml-auto font-bold text-white">{entry.value.toLocaleString()} คน ({(total > 0 ? (entry.value / total * 100) : 0).toFixed(1)}%)</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Card 5: ผู้แสดงความคิดเห็นแยกตามต้นทาง */}
+          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-pink-600/5 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+            <h3 className="text-[13px] font-bold text-white relative z-10">
+              ผู้แสดงความคิดเห็นแยกตามต้นทาง
+            </h3>
+            <div className="h-[180px] w-full flex items-center justify-center relative z-10">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={commentOriginsChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={75}
+                    stroke="none"
+                    dataKey="value"
+                  >
+                    {commentOriginsChartData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip
+                    contentStyle={{ backgroundColor: "#020617", borderColor: "#1e293b", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }}
+                    itemStyle={{ color: "#f8fafc", fontSize: "11px", fontWeight: "bold" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            {/* Legend */}
+            <div className="grid grid-cols-2 gap-x-2 gap-y-2 mt-2 relative z-10 text-[10px]">
+              {commentOriginsChartData.slice(0, 6).map((entry, index) => {
+                const total = commentOriginsChartData.reduce((acc, curr) => acc + curr.value, 0);
+                return (
+                  <div key={index} className="flex items-center gap-1.5 text-slate-300">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[(index + 2) % COLORS.length] }}></span>
+                    <span className="truncate">{entry.name}</span>
                     <span className="ml-auto font-bold text-white">{entry.value.toLocaleString()} คน ({(total > 0 ? (entry.value / total * 100) : 0).toFixed(1)}%)</span>
                   </div>
                 );
