@@ -894,9 +894,14 @@ function App() {
 // ----------------------------------------------------
 // SEATING LAYOUT MAP (STATIC CANVAS RENDERER)
 // ----------------------------------------------------
-function SeatingLayoutMap({ bookedD1Count, bookedD2Count, initialDay = "day1" }: { bookedD1Count: number; bookedD2Count: number, initialDay?: "day1" | "day2" }) {
+function SeatingLayoutMap({ bookedD1Count, bookedD2Count, initialDay = "day1", showSelector = true }: { bookedD1Count: number; bookedD2Count: number, initialDay?: "day1" | "day2", showSelector?: boolean }) {
   const { t } = useTranslation();
   const [selectedDay, setSelectedDay] = useState<"day1" | "day2">(initialDay);
+
+  // Sync state with prop
+  useEffect(() => {
+    setSelectedDay(initialDay);
+  }, [initialDay]);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [hoveredSeat, setHoveredSeat] = useState<{
@@ -1046,30 +1051,32 @@ function SeatingLayoutMap({ bookedD1Count, bookedD2Count, initialDay = "day1" }:
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-4 items-center justify-between">
-        <div className="flex gap-3">
-          <button
-            onClick={() => setSelectedDay("day1")}
-            className={`px-5 py-2 rounded-xl text-sm font-bold transition-all border ${
-              selectedDay === "day1"
-                ? "bg-blue-500/20 text-blue-400 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.3)]"
-                : "bg-slate-900 border-slate-800 text-slate-500 hover:text-blue-300 hover:border-blue-900/50 hover:bg-slate-800"
-            }`}
-          >
-            {t('map_btn_d1')}
-          </button>
-          <button
-            onClick={() => setSelectedDay("day2")}
-            className={`px-5 py-2 rounded-xl text-sm font-bold transition-all border ${
-              selectedDay === "day2"
-                ? "bg-amber-500/20 text-[#facc15] border-amber-500/50 shadow-[0_0_15px_rgba(250,204,21,0.3)]"
-                : "bg-slate-900 border-slate-800 text-slate-500 hover:text-amber-300 hover:border-amber-900/50 hover:bg-slate-800"
-            }`}
-          >
-            {t('map_btn_d2')}
-          </button>
-        </div>
+        {showSelector && (
+          <div className="flex gap-3">
+            <button
+              onClick={() => setSelectedDay("day1")}
+              className={`px-5 py-2 rounded-xl text-sm font-bold transition-all border ${
+                selectedDay === "day1"
+                  ? "bg-blue-500/20 text-blue-400 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.3)]"
+                  : "bg-slate-900 border-slate-800 text-slate-500 hover:text-blue-300 hover:border-blue-900/50 hover:bg-slate-800"
+              }`}
+            >
+              {t('map_btn_d1')}
+            </button>
+            <button
+              onClick={() => setSelectedDay("day2")}
+              className={`px-5 py-2 rounded-xl text-sm font-bold transition-all border ${
+                selectedDay === "day2"
+                  ? "bg-amber-500/20 text-[#facc15] border-amber-500/50 shadow-[0_0_15px_rgba(250,204,21,0.3)]"
+                  : "bg-slate-900 border-slate-800 text-slate-500 hover:text-amber-300 hover:border-amber-900/50 hover:bg-slate-800"
+              }`}
+            >
+              {t('map_btn_d2')}
+            </button>
+          </div>
+        )}
         
-        <div className="text-xs text-slate-400 font-medium flex flex-wrap items-center bg-slate-950/80 px-4 py-2 border border-slate-850 rounded-xl min-w-[200px] justify-center">
+        <div className={`text-xs text-slate-400 font-medium flex flex-wrap items-center bg-slate-950/80 px-4 py-2 border border-slate-850 rounded-xl min-w-[200px] justify-center ${!showSelector ? 'w-full sm:w-auto' : ''}`}>
           {hoveredSeat ? (
             <span className="flex items-center gap-2">
               <span className={`w-3 h-3 rounded-full ${hoveredSeat.status === 'BOOKED' ? (selectedDay === 'day1' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]' : 'bg-[#facc15] shadow-[0_0_8px_rgba(250,204,21,0.8)]') : 'bg-slate-600'}`}></span>
@@ -3001,6 +3008,7 @@ function AdminDashboardView({
               bookedD1Count={stats.bookedCountD1} 
               bookedD2Count={stats.bookedCountD2} 
               initialDay={seatingTabDay} 
+              showSelector={false}
             />
           </div>
         </div>
