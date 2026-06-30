@@ -3498,7 +3498,7 @@ function AdminDashboardView({
                         : "bg-slate-950 border-[#1e293b] text-slate-400 hover:text-white hover:bg-slate-900"
                       }`}
                   >
-                    DAY 1 (วันเสาร์)
+                    Day 1
                   </button>
                   <button
                     onClick={() => setSeatingTabDay("day2")}
@@ -3507,7 +3507,7 @@ function AdminDashboardView({
                         : "bg-slate-950 border-[#1e293b] text-slate-400 hover:text-white hover:bg-slate-900"
                       }`}
                   >
-                    DAY 2 (วันอาทิตย์)
+                    Day 2
                   </button>
                 </div>
               </div>
